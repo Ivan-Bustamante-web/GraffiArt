@@ -1,0 +1,6 @@
+# Dependencias (Bloquea todos los node_modules del monorepo)
+node_modules/
+
+# Variables de entorno / Secretos
+.env
+.env.local
