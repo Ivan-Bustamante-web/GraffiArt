@@ -9,20 +9,77 @@ generator client {
 }
 
 model Usuario {
-  id              String   @id @default(uuid())
-  nombre          String
-  apellido        String
-  email           String   @unique
-  passwordHash    String
-  telefono        String?
-  fechaRegistro   DateTime @default(now())
-  emailVerificado Boolean  @default(false)
-  rol             Rol      @default(CLIENTE)
+  id                    String                 @id @default(uuid())
+  nombre                String
+  apellido              String
+  email                 String                 @unique
+  passwordHash          String
+  telefono              String?
+  fechaRegistro         DateTime               @default(now())
+  emailVerificado       Boolean                @default(false)
+  rol                   Rol                    @default(CLIENTE)
+  inventarioMovimientos InventarioMovimiento[]
 }
 
 enum Rol {
   CLIENTE
   ADMIN
+}
+
+enum CategoriaMaterial {
+  MDF
+  MELAMINA
+  METAL
+  VIDRIO
+  ACERO
+  ACCESORIO
+  OTRO
+}
+
+enum UnidadMedida {
+  UNIDAD
+  KG
+  M
+  M2
+  CM
+  LATA
+  BOLSA
+}
+
+enum TipoMovimientoInventario {
+  ENTRADA
+  SALIDA
+  AJUSTE
+}
+
+model Material {
+  id            String                 @id @default(uuid())
+  nombre        String                 @db.VarChar(150)
+  codigo        String                 @unique @db.VarChar(50)
+  categoria     CategoriaMaterial
+  unidadMedida  UnidadMedida
+  stockActual   Int                    @default(0)
+  stockMinimo   Int                    @default(0)
+  costoUnitario Decimal?               @db.Decimal(10, 2)
+  descripcion   String?                @db.Text
+  activo        Boolean                @default(true)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt()
+  movimientos   InventarioMovimiento[]
+}
+
+model InventarioMovimiento {
+  id        String                   @id @default(uuid())
+  materialId String
+  material   Material                 @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  tipo      TipoMovimientoInventario
+  cantidad  Int
+  motivo    String?
+  referencia String?
+  fecha     DateTime                 @default(now())
+  usuarioId String?
+  usuario   Usuario?                 @relation(fields: [usuarioId], references: [id])
+  createdAt DateTime                 @default(now())
 }
 
 datasource db {
