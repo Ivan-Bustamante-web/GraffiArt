@@ -8,6 +8,23 @@ generator client {
   output   = "../generated/prisma"
 }
 
+model Usuario {
+  id              String   @id @default(uuid())
+  nombre          String
+  apellido        String
+  email           String   @unique
+  passwordHash    String
+  telefono        String?
+  fechaRegistro   DateTime @default(now())
+  emailVerificado Boolean  @default(false)
+  rol             Rol      @default(CLIENTE)
+}
+
+enum Rol {
+  CLIENTE
+  ADMIN
+}
+
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
 }
