@@ -114,9 +114,9 @@ model Gabinete {
   stockActual    Int                    @default(0)
   stockMinimo    Int                    @default(0)
   createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt()
+  updatedAt      DateTime               @updatedAt
   activo         Boolean                @default(true)
-  tamaño        TamañoGabinete
+  tamano        TamañoGabinete
   formato        FormatoGabinete
   materialChasis MaterialGabinete
   panel          PanelesGabinete
