@@ -4,8 +4,7 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 model Usuario {
@@ -64,7 +63,7 @@ model Material {
   descripcion   String?                @db.Text
   activo        Boolean                @default(true)
   createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt()
+  updatedAt     DateTime               @updatedAt
   movimientos   InventarioMovimiento[]
 }
 
