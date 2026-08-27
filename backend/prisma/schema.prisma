@@ -4,8 +4,7 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 model Usuario {
@@ -84,22 +83,64 @@ model Material {
   descripcion   String?                @db.Text
   activo        Boolean                @default(true)
   createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt()
+  updatedAt     DateTime               @updatedAt
   movimientos   InventarioMovimiento[]
 }
 
 model InventarioMovimiento {
-  id        String                   @id @default(uuid())
-  materialId String
-  material   Material                 @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  tipo      TipoMovimientoInventario
-  cantidad  Int
-  motivo    String?
+  id         String                   @id @default(uuid())
+  materialId String?
+  material   Material?                @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  tipo       TipoMovimientoInventario
+  cantidad   Int
+  motivo     String?
   referencia String?
-  fecha     DateTime                 @default(now())
-  usuarioId String?
-  usuario   Usuario?                 @relation(fields: [usuarioId], references: [id])
-  createdAt DateTime                 @default(now())
+  fecha      DateTime                 @default(now())
+  usuarioId  String?
+  usuario    Usuario?                 @relation(fields: [usuarioId], references: [id])
+  createdAt  DateTime                 @default(now())
+  gabineteId String?
+  gabinete   Gabinete?                @relation(fields: [gabineteId], references: [id], onDelete: SetNull)
+}
+
+enum TamañoGabinete {
+  FULL_TOWER
+  MID_TOWER
+  MINI_TOWER
+}
+
+enum FormatoGabinete {
+  ATX
+  MICRO_ATX
+  ITX
+}
+
+enum MaterialGabinete {
+  ACERO
+  ALUMINIO
+}
+
+enum PanelesGabinete {
+  VIDRIO_TEMPLADO
+  ACRILICO
+  MALLADO
+}
+
+model Gabinete {
+  id             String                 @id @default(uuid())
+  nombre         String                 @db.VarChar(150)
+  marca          String                 @db.VarChar(150)
+  costoUnitario  Decimal                @db.Decimal(10, 2)
+  stockActual    Int                    @default(0)
+  stockMinimo    Int                    @default(0)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  activo         Boolean                @default(true)
+  tamano        TamañoGabinete
+  formato        FormatoGabinete
+  materialChasis MaterialGabinete
+  panel          PanelesGabinete
+  movimientos    InventarioMovimiento[]
 }
 
 datasource db {
