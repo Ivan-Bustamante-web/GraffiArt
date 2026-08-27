@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
-import { getMateriales, crearMaterial, eliminarMaterial } from '../services/materialService';
+import { getMateriales, crearMaterial, editarMaterial, eliminarMaterial } from '../services/materialService';
 
 const CATEGORIAS = ['MDF', 'MELAMINA', 'METAL', 'VIDRIO', 'ACERO', 'ACCESORIO', 'OTRO'];
 const UNIDADES = ['UNIDAD', 'KG', 'M', 'M2', 'CM', 'LATA', 'BOLSA'];
 
+const FORM_VACIO = {
+  nombre: '', codigo: '', categoria: 'MDF', unidadMedida: 'UNIDAD',
+  stockActual: 0, stockMinimo: 0, costoUnitario: '', descripcion: '',
+};
+
 export default function Inventario() {
   const [materiales, setMateriales] = useState([]);
-  const [form, setForm] = useState({
-    nombre: '', codigo: '', categoria: 'MDF', unidadMedida: 'UNIDAD',
-    stockActual: 0, stockMinimo: 0, costoUnitario: '', descripcion: '',
-  });
+  const [form, setForm] = useState(FORM_VACIO);
+  const [editandoId, setEditandoId] = useState(null);
   const [error, setError] = useState('');
 
   const cargarMateriales = async () => {
@@ -27,23 +30,50 @@ export default function Inventario() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const payload = {
+      ...form,
+      stockActual: Number(form.stockActual),
+      stockMinimo: Number(form.stockMinimo),
+      costoUnitario: form.costoUnitario ? Number(form.costoUnitario) : null,
+    };
     try {
-      await crearMaterial({
-        ...form,
-        stockActual: Number(form.stockActual),
-        stockMinimo: Number(form.stockMinimo),
-        costoUnitario: form.costoUnitario ? Number(form.costoUnitario) : null,
-      });
-      setForm({ nombre: '', codigo: '', categoria: 'MDF', unidadMedida: 'UNIDAD', stockActual: 0, stockMinimo: 0, costoUnitario: '', descripcion: '' });
+      if (editandoId) {
+        await editarMaterial(editandoId, payload);
+      } else {
+        await crearMaterial(payload);
+      }
+      setForm(FORM_VACIO);
+      setEditandoId(null);
+      setError('');
       cargarMateriales();
     } catch (err) {
-      setError('Error al crear el material. Revisá que el código no esté repetido.');
+      setError(editandoId ? 'Error al editar el material.' : 'Error al crear el material. Revisá que el código no esté repetido.');
     }
+  };
+
+  const handleEditarClick = (material) => {
+    setEditandoId(material.id);
+    setForm({
+      nombre: material.nombre,
+      codigo: material.codigo,
+      categoria: material.categoria,
+      unidadMedida: material.unidadMedida,
+      stockActual: material.stockActual,
+      stockMinimo: material.stockMinimo,
+      costoUnitario: material.costoUnitario ?? '',
+      descripcion: material.descripcion ?? '',
+    });
+  };
+
+  const handleCancelarEdicion = () => {
+    setEditandoId(null);
+    setForm(FORM_VACIO);
   };
 
   const handleEliminar = async (id) => {
     if (!confirm('¿Seguro que querés eliminar este material?')) return;
     await eliminarMaterial(id);
+    if (editandoId === id) handleCancelarEdicion();
     cargarMateriales();
   };
 
@@ -65,7 +95,17 @@ export default function Inventario() {
         <input name="stockMinimo" type="number" placeholder="Stock mínimo" value={form.stockMinimo} onChange={handleChange} className="border p-2 rounded" />
         <input name="costoUnitario" type="number" step="0.01" placeholder="Costo unitario" value={form.costoUnitario} onChange={handleChange} className="border p-2 rounded" />
         <input name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} className="border p-2 rounded" />
-        <button type="submit" className="col-span-2 bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Agregar material</button>
+
+        <div className="col-span-2 flex gap-2">
+          <button type="submit" className="flex-1 bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+            {editandoId ? 'Guardar cambios' : 'Agregar material'}
+          </button>
+          {editandoId && (
+            <button type="button" onClick={handleCancelarEdicion} className="flex-1 bg-gray-400 text-white p-2 rounded hover:bg-gray-500">
+              Cancelar
+            </button>
+          )}
+        </div>
       </form>
 
       <table className="w-full border-collapse">
@@ -85,7 +125,8 @@ export default function Inventario() {
               <td className="p-2">{m.codigo}</td>
               <td className="p-2">{m.categoria}</td>
               <td className="p-2">{m.stockActual} {m.unidadMedida}</td>
-              <td className="p-2">
+              <td className="p-2 flex gap-3">
+                <button onClick={() => handleEditarClick(m)} className="text-blue-600 hover:underline">Editar</button>
                 <button onClick={() => handleEliminar(m.id)} className="text-red-600 hover:underline">Eliminar</button>
               </td>
             </tr>
