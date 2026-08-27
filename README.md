@@ -96,3 +96,6 @@ npm run dev
 Levanta en `http://localhost:5173`
 
 Abrí esa URL en el navegador para ver la aplicación.
+
+
+LINK DOCUMENTACION: https://docs.google.com/document/d/1dXhFm-yipDWLSxfGWzNn0fUnUhUZOD0m/edit?usp=sharing&ouid=114669798753844354963&rtpof=true&sd=true
