@@ -19,6 +19,26 @@ model Usuario {
   emailVerificado       Boolean                @default(false)
   rol                   Rol                    @default(CLIENTE)
   inventarioMovimientos InventarioMovimiento[]
+  tokensAcceso          TokenAcceso[]
+}
+
+model TokenAcceso {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  tipo      TipoToken
+  expiraEn  DateTime
+  usado     Boolean  @default(false)
+  creadoEn  DateTime @default(now())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, tipo])
+  @@index([expiraEn])
+}
+
+enum TipoToken {
+  VERIFICACION_EMAIL
+  RECUPERACION_PASSWORD
 }
 
 enum Rol {
