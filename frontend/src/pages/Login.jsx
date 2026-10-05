@@ -14,10 +14,15 @@ export default function Login() {
     try {
       const data = await login(email, password);
       localStorage.setItem('token', data.token);
+      localStorage.setItem('graffiart_token', data.token);
       localStorage.setItem('usuario', JSON.stringify(data.usuario));
       navigate('/');
     } catch (err) {
-      setError('Email o contraseña incorrectos');
+      if (err.response?.status === 403) {
+        setError('Tu email aún no fue verificado. Revisá tu correo para activar la cuenta.');
+      } else {
+        setError('Email o contraseña incorrectos');
+      }
     }
   };
 

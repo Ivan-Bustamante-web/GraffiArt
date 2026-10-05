@@ -16,9 +16,14 @@ export default function Register() {
     setError('');
     try {
       const data = await register(form);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('usuario', JSON.stringify(data.usuario));
-      navigate('/');
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('graffiart_token', data.token);
+        localStorage.setItem('usuario', JSON.stringify(data.usuario));
+        navigate('/');
+        return;
+      }
+      setError(data.message || 'Registro exitoso. Revisá tu email para activar la cuenta.');
     } catch (err) {
       if (err.response?.status === 409) {
         setError('Ya existe una cuenta con ese email');

@@ -4,6 +4,7 @@ import AuthPage from "./pages/AuthPage";
 import Inventario from "./pages/Inventario";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Perfil from "./pages/Perfil";
 
 function App() {
   const linkClass = ({ isActive }) =>
@@ -19,6 +20,7 @@ function App() {
           <div className="flex gap-2">
             <NavLink to="/" className={linkClass} end>Configurador</NavLink>
             <NavLink to="/inventario" className={linkClass}>Inventario</NavLink>
+            <NavLink to="/perfil" className={linkClass}>Mi perfil</NavLink>
             <NavLink to="/login" className={linkClass}>Login</NavLink>
             <NavLink to="/register" className={linkClass}>Registrarme</NavLink>
           </div>
@@ -27,6 +29,7 @@ function App() {
       <Routes>
         <Route path="/" element={<ConfiguratorPage />} />
         <Route path="/inventario" element={<Inventario />} />
+        <Route path="/perfil" element={<Perfil />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/auth" element={<AuthPage />} />

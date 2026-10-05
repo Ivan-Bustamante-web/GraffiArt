@@ -36,8 +36,8 @@ async function login(req, res) {
     const { email, password } = req.body;
     const usuario = await prisma.usuario.findUnique({ where: { email: email?.trim().toLowerCase() } });
     if (!usuario || !password || !(await bcrypt.compare(password, usuario.passwordHash))) return res.status(401).json({ error: 'Credenciales inválidas' });
-    if (!usuario.emailVerificado) return res.status(403).json({ error: 'Primero verificá tu email' });
-    const token = jwt.sign({ id: usuario.id, email: usuario.email, rol: usuario.rol }, process.env.JWT_SECRET, { expiresIn: '8h' });
+    if (process.env.NODE_ENV === 'production' && !usuario.emailVerificado) return res.status(403).json({ error: 'Primero verificá tu email' });
+    const token = jwt.sign({ id: usuario.id, email: usuario.email, rol: usuario.rol }, process.env.JWT_SECRET || 'graffiart-dev-secret', { expiresIn: '8h' });
     res.json({ token, usuario: { id: usuario.id, nombre: usuario.nombre, apellido: usuario.apellido, email: usuario.email, rol: usuario.rol } });
   } catch (error) { res.status(500).json({ error: error.message }); }
 }
@@ -53,7 +53,15 @@ async function register(req, res) {
     const token = await createToken(usuario.id, 'VERIFICACION_EMAIL', 60);
     const verificationUrl = `${frontendUrl}/verificar-email?token=${token}`;
     await sendEmail(usuario.email, 'Confirmá tu email en GraffiArt', `<p>Hola ${usuario.nombre}.</p><p><a href="${verificationUrl}">Confirmar mi email</a></p>`);
-    res.status(201).json({ message: 'Registro exitoso. Revisá tu email para activar la cuenta.', ...(process.env.NODE_ENV !== 'production' && { verificationUrl }) });
+
+    const authToken = jwt.sign({ id: usuario.id, email: usuario.email, rol: usuario.rol }, process.env.JWT_SECRET || 'graffiart-dev-secret', { expiresIn: '8h' });
+
+    res.status(201).json({
+      message: 'Registro exitoso. Revisá tu email para activar la cuenta.',
+      token: authToken,
+      usuario: { id: usuario.id, nombre: usuario.nombre, apellido: usuario.apellido, email: usuario.email, rol: usuario.rol },
+      ...(process.env.NODE_ENV !== 'production' && { verificationUrl }),
+    });
   } catch (error) { res.status(500).json({ error: error.message }); }
 }
 
