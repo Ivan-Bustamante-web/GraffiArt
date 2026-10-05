@@ -49,6 +49,16 @@ export default function Login() {
         <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
           Ingresar
         </button>
+
+        <div className="mt-4 text-center text-sm">
+          <button
+            type="button"
+            onClick={() => navigate('/auth?mode=forgot')}
+            className="text-blue-600 hover:underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        </div>
       </form>
     </div>
   );

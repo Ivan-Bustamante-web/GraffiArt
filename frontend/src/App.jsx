@@ -31,6 +31,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/registro" element={<AuthPage />} />
+        <Route path="/forgot-password" element={<AuthPage />} />
+        <Route path="/recuperar-password" element={<AuthPage />} />
         <Route path="/verificar-email" element={<AuthPage />} />
         <Route path="/restablecer-password" element={<AuthPage />} />
       </Routes>

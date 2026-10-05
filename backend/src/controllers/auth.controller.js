@@ -77,7 +77,11 @@ async function forgotPassword(req, res) {
     await prisma.tokenAcceso.updateMany({ where: { usuarioId: usuario.id, tipo: 'RECUPERACION_PASSWORD', usado: false }, data: { usado: true } });
     const token = await createToken(usuario.id, 'RECUPERACION_PASSWORD', 30);
     const resetUrl = `${frontendUrl}/restablecer-password?token=${token}`;
-    await sendEmail(usuario.email, 'Restablecé tu contraseña de GraffiArt', `<p><a href="${resetUrl}">Restablecer contraseña</a></p>`);
+    await sendEmail(
+      usuario.email,
+      'Restablecé tu contraseña de GraffiArt',
+      `<p><a href="${resetUrl}">Restablecer contraseña</a></p><p>Si no podés abrir el enlace, ingresá este código en la página de recuperación:</p><p><strong>${token}</strong></p><p>El enlace y el código vencen en 30 minutos y solo pueden usarse una vez.</p>`,
+    );
     if (process.env.NODE_ENV !== 'production') result.resetUrl = resetUrl;
     res.json(result);
   } catch (error) { res.status(500).json({ error: error.message }); }
