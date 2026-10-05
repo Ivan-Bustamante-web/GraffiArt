@@ -2,20 +2,43 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { loginUser, registerUser, requestPasswordReset, resetPassword, verifyEmail } from "../services/authApi";
 
-const initialForm = { nombre: "", apellido: "", email: "", password: "", telefono: "" };
+const initialForm = { nombre: "", apellido: "", email: "", password: "", telefono: "", resetCode: "" };
 
 function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const query = new URLSearchParams(location.search);
   const token = query.get("token");
+  const modeFromQuery = query.get("mode");
   const isVerification = location.pathname === "/verificar-email";
-  const isReset = location.pathname === "/restablecer-password";
-  const [mode, setMode] = useState(location.pathname === "/registro" ? "register" : "login");
+  const isReset = location.pathname === "/restablecer-password" || location.pathname === "/recuperar-password" || location.pathname === "/forgot-password";
+  const [mode, setMode] = useState(
+    location.pathname === "/registro"
+      ? "register"
+      : modeFromQuery === "register"
+        ? "register"
+        : modeFromQuery === "forgot"
+          ? "forgot"
+          : "login"
+  );
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetUrl, setResetUrl] = useState("");
+  const [resetComplete, setResetComplete] = useState(false);
+
+  useEffect(() => {
+    if (location.pathname === "/registro") {
+      setMode("register");
+      return;
+    }
+    if (location.pathname === "/auth") {
+      if (modeFromQuery === "register") setMode("register");
+      else if (modeFromQuery === "forgot") setMode("forgot");
+      else setMode("login");
+    }
+  }, [location.pathname, modeFromQuery]);
 
   useEffect(() => {
     if (!isVerification || !token) return;
@@ -35,14 +58,16 @@ function AuthPage() {
     setLoading(true);
     try {
       if (isReset) {
-        const response = await resetPassword({ token, password: form.password });
+        const response = await resetPassword({ token: token || form.resetCode.trim().toLowerCase(), password: form.password });
         setMessage(response.message);
+        setResetComplete(true);
       } else if (mode === "register") {
         const response = await registerUser(form);
         setMessage(response.message);
       } else if (mode === "forgot") {
         const response = await requestPasswordReset(form.email);
         setMessage(response.message);
+        setResetUrl(response.resetUrl || "");
       } else {
         const response = await loginUser({ email: form.email, password: form.password });
         localStorage.setItem("graffiart_token", response.token);
@@ -64,19 +89,51 @@ function AuthPage() {
 
   return (
     <AuthShell title={title}>
-      <p className="mb-6 text-sm text-neutral-500">{isReset ? "Usá al menos 8 caracteres." : "Diseñá y comprá tu gabinete personalizado."}</p>
+      <p className="mb-6 text-sm text-neutral-500">{isReset ? token ? "Usá al menos 8 caracteres. El enlace vence en 30 minutos." : "Ingresá el código recibido por correo y elegí una contraseña de al menos 8 caracteres." : "Diseñá y comprá tu gabinete personalizado."}</p>
       {message && <p className="mb-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p>}
       {error && <p className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      <form className="space-y-4" onSubmit={submit}>
+      {mode === "forgot" && message && <Link className="mb-4 block text-sm font-medium text-neutral-900 underline" to="/restablecer-password">Ingresar código de recuperación</Link>}
+      {resetUrl && <p className="mb-4 text-sm"><a className="font-medium text-neutral-900 underline" href={resetUrl}>Abrir enlace de recuperación</a></p>}
+      {!resetComplete && <form className="space-y-4" onSubmit={submit}>
         {mode === "register" && !isReset && <div className="grid grid-cols-2 gap-3"><Field label="Nombre" name="nombre" value={form.nombre} onChange={updateField} /><Field label="Apellido" name="apellido" value={form.apellido} onChange={updateField} /></div>}
         {mode === "register" && !isReset && <Field label="Teléfono (opcional)" name="telefono" value={form.telefono} onChange={updateField} required={false} />}
         {mode !== "register" && !isReset && <Field label="Email" name="email" type="email" value={form.email} onChange={updateField} />}
         {mode === "register" && <Field label="Email" name="email" type="email" value={form.email} onChange={updateField} />}
+        {isReset && !token && <Field label="Código de recuperación" name="resetCode" value={form.resetCode} onChange={updateField} autoComplete="one-time-code" minLength={64} maxLength={64} pattern="[a-fA-F0-9]{64}" />}
         {(mode === "login" || mode === "register" || isReset) && <Field label="Contraseña" name="password" type="password" value={form.password} onChange={updateField} minLength={8} />}
-        <button className="w-full rounded-md bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50" disabled={loading || (isReset && !token)}>{loading ? "Procesando..." : submitLabel}</button>
-      </form>
-      {!isReset && mode === "login" && <button className="mt-5 text-sm text-neutral-600 underline" type="button" onClick={() => { setMode("forgot"); setMessage(""); setError(""); }}>¿Olvidaste tu contraseña?</button>}
-      {!isReset && <p className="mt-6 text-sm text-neutral-600">{mode === "register" ? "¿Ya tenés cuenta?" : "¿No tenés cuenta?"} <button className="font-medium text-neutral-900 underline" type="button" onClick={() => setMode(mode === "register" ? "login" : "register")}>{mode === "register" ? "Iniciar sesión" : "Registrarme"}</button></p>}
+        <button className="w-full rounded-md bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50" disabled={loading || (isReset && !token && !form.resetCode.trim())}>{loading ? "Procesando..." : submitLabel}</button>
+      </form>}
+      {resetComplete && <Link className="text-sm font-medium text-neutral-900 underline" to="/auth">Ir a iniciar sesión</Link>}
+      {!isReset && mode === "login" && (
+        <button
+          className="mt-5 text-sm text-neutral-600 underline"
+          type="button"
+          onClick={() => {
+            setMode("forgot");
+            setMessage("");
+            setError("");
+            navigate("/auth?mode=forgot");
+          }}
+        >
+          ¿Olvidaste tu contraseña?
+        </button>
+      )}
+      {!isReset && (
+        <p className="mt-6 text-sm text-neutral-600">
+          {mode === "register" ? "¿Ya tenés cuenta?" : "¿No tenés cuenta?"}{" "}
+          <button
+            className="font-medium text-neutral-900 underline"
+            type="button"
+            onClick={() => {
+              const nextMode = mode === "register" ? "login" : "register";
+              setMode(nextMode);
+              navigate(nextMode === "register" ? "/auth?mode=register" : "/auth");
+            }}
+          >
+            {mode === "register" ? "Iniciar sesión" : "Registrarme"}
+          </button>
+        </p>
+      )}
     </AuthShell>
   );
 }
