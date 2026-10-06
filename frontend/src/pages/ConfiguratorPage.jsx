@@ -12,16 +12,12 @@ function ConfiguratorPage() {
 
   useEffect(() => {
     const configuracion = location.state?.configuracion;
-    if (configuracion) {
-      setSeleccion(configuracion);
-    }
+    if (configuracion) setSeleccion(configuracion);
   }, [location.state]);
 
   const handleSeleccionar = (categoriaId, opcionId, esMultiple) => {
     setSeleccion((prev) => {
-      if (!esMultiple) {
-        return { ...prev, [categoriaId]: opcionId };
-      }
+      if (!esMultiple) return { ...prev, [categoriaId]: opcionId };
 
       const actuales = prev[categoriaId] || [];
       const yaEstaba = actuales.includes(opcionId);
@@ -29,8 +25,19 @@ function ConfiguratorPage() {
         ? actuales.filter((id) => id !== opcionId)
         : [...actuales, opcionId];
 
-      return { ...prev, [categoriaId]: nuevos };
+      // si se deselecciona, limpiamos su ubicación
+      const ubicaciones = { ...(prev.ubicaciones || {}) };
+      if (yaEstaba) delete ubicaciones[opcionId];
+
+      return { ...prev, [categoriaId]: nuevos, ubicaciones };
     });
+  };
+
+  const handleUbicar = (accesorioId, ubicacionId) => {
+    setSeleccion((prev) => ({
+      ...prev,
+      ubicaciones: { ...(prev.ubicaciones || {}), [accesorioId]: ubicacionId },
+    }));
   };
 
   const handleLoadDesign = (configuracion) => {
@@ -46,11 +53,11 @@ function ConfiguratorPage() {
 
       <div className="flex flex-col md:flex-row gap-6 p-6">
         <ConfiguratorPreview cabinet={cabinetBase} seleccion={seleccion} />
-
         <ConfiguratorOptions
           categorias={categoriasConfigurables}
           seleccion={seleccion}
           onSeleccionar={handleSeleccionar}
+          onUbicar={handleUbicar}
         />
       </div>
 

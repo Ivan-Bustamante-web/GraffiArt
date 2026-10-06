@@ -22,12 +22,18 @@ export default function Inventario() {
     try {
       const data = await getMateriales();
       setMateriales(data);
-    } catch (err) {
+    } catch {
       setError('No se pudo conectar con el servidor');
     }
   };
 
-  useEffect(() => { cargarMateriales(); }, []);
+  useEffect(() => {
+    let cancelado = false;
+    getMateriales()
+      .then((data) => { if (!cancelado) setMateriales(data); })
+      .catch(() => { if (!cancelado) setError('No se pudo conectar con el servidor'); });
+    return () => { cancelado = true; };
+  }, []);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -49,7 +55,7 @@ export default function Inventario() {
       setEditandoId(null);
       setError('');
       cargarMateriales();
-    } catch (err) {
+    } catch {
       setError(editandoId ? 'Error al editar el material.' : 'Error al crear el material. Revisá que el código no esté repetido.');
     }
   };

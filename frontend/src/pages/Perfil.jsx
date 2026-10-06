@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SavedDesigns from '../components/SavedDesigns';
 import { getPerfil, updatePerfil } from '../services/usuarioService';
+import { useAuthStore } from '../store/authStore';
 
 export default function Perfil() {
   const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
   const [usuario, setUsuario] = useState(null);
   const [form, setForm] = useState({ nombre: '', apellido: '', telefono: '' });
   const [loading, setLoading] = useState(true);
@@ -62,9 +64,7 @@ export default function Perfil() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('graffiart_token');
-    localStorage.removeItem('usuario');
+    logout();
     navigate('/login');
   };
 
