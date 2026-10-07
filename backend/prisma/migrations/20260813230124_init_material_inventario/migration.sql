@@ -1,0 +1,3 @@
+-- Compatibility migration name for databases that recorded the material and
+-- inventory initialization under this timestamp. The equivalent schema is
+-- created by 20260813211506_init on clean installations.

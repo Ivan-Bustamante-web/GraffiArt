@@ -19,6 +19,7 @@ model Usuario {
   rol                   Rol                    @default(CLIENTE)
   inventarioMovimientos InventarioMovimiento[]
   tokensAcceso          TokenAcceso[]
+  disenosGuardados      DisenoGuardado[]
 }
 
 model TokenAcceso {
@@ -33,6 +34,19 @@ model TokenAcceso {
 
   @@index([usuarioId, tipo])
   @@index([expiraEn])
+}
+
+model DisenoGuardado {
+  id             String   @id @default(uuid())
+  nombre         String   @db.VarChar(120)
+  descripcion    String?  @db.Text
+  configuracion  Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  usuarioId      String
+  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
 }
 
 enum TipoToken {
@@ -146,3 +160,4 @@ model Gabinete {
 datasource db {
   provider = "mysql"
 }
+

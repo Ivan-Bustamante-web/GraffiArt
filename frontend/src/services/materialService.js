@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000/api/materiales';
+const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/materiales`;
 
 export const getMateriales = async () => {
   const res = await axios.get(API_URL);

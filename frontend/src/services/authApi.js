@@ -29,3 +29,8 @@ export async function verifyEmail(token) {
   const { data: response } = await authApi.get(`/auth/verify-email?token=${encodeURIComponent(token)}`);
   return response;
 }
+
+export async function resendVerification(email) {
+  const { data: response } = await authApi.post("/auth/resend-verification", { email });
+  return response;
+}

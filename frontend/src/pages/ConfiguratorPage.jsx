@@ -1,21 +1,23 @@
-// src/pages/ConfiguratorPage.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import ConfiguratorPreview from "../components/configurator/ConfiguratorPreview";
 import ConfiguratorOptions from "../components/configurator/ConfiguratorOptions";
 import ConfiguratorSummary from "../components/configurator/ConfiguratorSummary";
+import SavedDesigns from "../components/SavedDesigns";
 import { cabinetBase, categoriasConfigurables, precioBase } from "../data/cabinetsMock";
 
-// Estado central de la selección del usuario.
-// Forma: { [categoriaId]: opcionId | opcionId[] }
-// Por ahora solo maneja el estado, sin lógica de negocio (eso es de otra tarea/sprint).
 function ConfiguratorPage() {
+  const location = useLocation();
   const [seleccion, setSeleccion] = useState({});
+
+  useEffect(() => {
+    const configuracion = location.state?.configuracion;
+    if (configuracion) setSeleccion(configuracion);
+  }, [location.state]);
 
   const handleSeleccionar = (categoriaId, opcionId, esMultiple) => {
     setSeleccion((prev) => {
-      if (!esMultiple) {
-        return { ...prev, [categoriaId]: opcionId };
-      }
+      if (!esMultiple) return { ...prev, [categoriaId]: opcionId };
 
       const actuales = prev[categoriaId] || [];
       const yaEstaba = actuales.includes(opcionId);
@@ -23,8 +25,23 @@ function ConfiguratorPage() {
         ? actuales.filter((id) => id !== opcionId)
         : [...actuales, opcionId];
 
-      return { ...prev, [categoriaId]: nuevos };
+      // si se deselecciona, limpiamos su ubicación
+      const ubicaciones = { ...(prev.ubicaciones || {}) };
+      if (yaEstaba) delete ubicaciones[opcionId];
+
+      return { ...prev, [categoriaId]: nuevos, ubicaciones };
     });
+  };
+
+  const handleUbicar = (accesorioId, ubicacionId) => {
+    setSeleccion((prev) => ({
+      ...prev,
+      ubicaciones: { ...(prev.ubicaciones || {}), [accesorioId]: ubicacionId },
+    }));
+  };
+
+  const handleLoadDesign = (configuracion) => {
+    setSeleccion(configuracion || {});
   };
 
   return (
@@ -36,11 +53,11 @@ function ConfiguratorPage() {
 
       <div className="flex flex-col md:flex-row gap-6 p-6">
         <ConfiguratorPreview cabinet={cabinetBase} seleccion={seleccion} />
-
         <ConfiguratorOptions
           categorias={categoriasConfigurables}
           seleccion={seleccion}
           onSeleccionar={handleSeleccionar}
+          onUbicar={handleUbicar}
         />
       </div>
 
@@ -49,6 +66,10 @@ function ConfiguratorPage() {
         categorias={categoriasConfigurables}
         seleccion={seleccion}
       />
+
+      <div className="px-6">
+        <SavedDesigns seleccion={seleccion} onLoadDesign={handleLoadDesign} />
+      </div>
     </div>
   );
 }

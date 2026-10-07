@@ -14,17 +14,26 @@ export default function Inventario() {
   const [form, setForm] = useState(FORM_VACIO);
   const [editandoId, setEditandoId] = useState(null);
   const [error, setError] = useState('');
+  const materialesBajoStock = materiales.filter(
+    (material) => material.stockActual < material.stockMinimo,
+  );
 
   const cargarMateriales = async () => {
     try {
       const data = await getMateriales();
       setMateriales(data);
-    } catch (err) {
+    } catch {
       setError('No se pudo conectar con el servidor');
     }
   };
 
-  useEffect(() => { cargarMateriales(); }, []);
+  useEffect(() => {
+    let cancelado = false;
+    getMateriales()
+      .then((data) => { if (!cancelado) setMateriales(data); })
+      .catch(() => { if (!cancelado) setError('No se pudo conectar con el servidor'); });
+    return () => { cancelado = true; };
+  }, []);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -46,7 +55,7 @@ export default function Inventario() {
       setEditandoId(null);
       setError('');
       cargarMateriales();
-    } catch (err) {
+    } catch {
       setError(editandoId ? 'Error al editar el material.' : 'Error al crear el material. Revisá que el código no esté repetido.');
     }
   };
@@ -84,6 +93,20 @@ export default function Inventario() {
 
         {error && (
           <p className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-sm">{error}</p>
+        )}
+
+        {materialesBajoStock.length > 0 && (
+          <section role="alert" className="bg-amber-50 border border-amber-300 text-amber-950 p-4 mb-6">
+            <h2 className="font-semibold mb-2">Productos que requieren reposición</h2>
+            <ul className="space-y-1 text-sm">
+              {materialesBajoStock.map((material) => (
+                <li key={material.id}>
+                  <strong>{material.nombre}</strong>: stock actual {material.stockActual} {material.unidadMedida},
+                  {' '}mínimo {material.stockMinimo} {material.unidadMedida}.
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
         <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 mb-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
