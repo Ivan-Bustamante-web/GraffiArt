@@ -7,11 +7,11 @@ const COLORES = {
 };
 
 const ICONOS = {
-  "ventiladores-rgb": "🌀",
-  "filtro-polvo":     "⬛",
-  "controlador-rgb":  "💡",
-  "panel-vidrio":     "🪟",
-  "tiras-led":        "✨",
+  "ventiladores-rgb": "",
+  "filtro-polvo":     "",
+  "controlador-rgb":  "",
+  "panel-vidrio":     "",
+  "tiras-led":        "",
 };
 
 export default function ConfiguratorPreview({ cabinet, seleccion }) {
