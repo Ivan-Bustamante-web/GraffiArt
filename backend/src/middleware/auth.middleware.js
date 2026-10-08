@@ -15,4 +15,14 @@ function verificarToken(req, res, next) {
   }
 }
 
-module.exports = { verificarToken };
+function verificarAdmin(req, res, next) {
+  if (req.usuario?.rol !== 'ADMIN') {
+    return res.status(403).json({
+      error: 'Acceso denegado. Se requieren permisos de administrador.',
+    });
+  }
+
+  next();
+}
+
+module.exports = { verificarToken, verificarAdmin };

@@ -1,65 +1,165 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
-model Usuario {
-  id                    String                 @id @default(uuid())
-  nombre                String
-  apellido              String
-  email                 String                 @unique
-  passwordHash          String
-  telefono              String?
-  fechaRegistro         DateTime               @default(now())
-  emailVerificado       Boolean                @default(false)
-  rol                   Rol                    @default(CLIENTE)
-  inventarioMovimientos InventarioMovimiento[]
-  tokensAcceso          TokenAcceso[]
-  disenosGuardados      DisenoGuardado[]
+datasource db {
+  provider = "mysql"
+
 }
 
-model TokenAcceso {
-  id        String   @id @default(uuid())
-  tokenHash String   @unique
-  tipo      TipoToken
+model carrito {
+  id          String        @id @default(uuid())
+  usuarioId   String        @unique(map: "Carrito_usuarioId_key")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime
+  usuario     usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade, map: "Carrito_usuarioId_fkey")
+  itemcarrito itemcarrito[]
+
+  @@index([usuarioId], map: "Carrito_usuarioId_idx")
+}
+
+model disenoguardado {
+  id            String        @id @default(uuid())
+  nombre        String        @db.VarChar(120)
+  descripcion   String?       @db.Text
+  configuracion String        @db.LongText
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime
+  usuarioId     String
+  usuario       usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade, map: "DisenoGuardado_usuarioId_fkey")
+  itemcarrito   itemcarrito[]
+
+  @@index([usuarioId], map: "DisenoGuardado_usuarioId_idx")
+}
+
+model gabinete {
+  id                   String                  @id @default(uuid())
+  nombre               String                  @db.VarChar(150)
+  marca                String                  @db.VarChar(150)
+  costoUnitario        Decimal                 @db.Decimal(10, 2)
+  stockActual          Int                     @default(0)
+  stockMinimo          Int                     @default(0)
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  activo               Boolean                 @default(true)
+  formato              gabinete_formato
+  materialChasis       gabinete_materialChasis
+  panel                gabinete_panel
+  tamano               gabinete_tamano
+  categoriaId          String?
+  categoria            CategoriaProducto?      @relation(fields: [categoriaId], references: [id], onDelete: SetNull, map: "Gabinete_categoriaId_fkey")
+  inventariomovimiento inventariomovimiento[]
+  itemcarrito          itemcarrito[]
+
+  @@index([categoriaId], map: "Gabinete_categoriaId_idx")
+}
+
+model CategoriaProducto {
+  id          String     @id @default(uuid())
+  nombre      String     @unique @db.VarChar(100)
+  descripcion String?    @db.Text
+  activo      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  productos   gabinete[]
+}
+
+model inventariomovimiento {
+  id         String                     @id @default(uuid())
+  materialId String?
+  tipo       inventariomovimiento_tipo
+  cantidad   Int
+  motivo     String?
+  referencia String?
+  fecha      DateTime                  @default(now())
+  usuarioId  String?
+  createdAt  DateTime                  @default(now())
+  gabineteId String?
+  gabinete   gabinete?                 @relation(fields: [gabineteId], references: [id], map: "InventarioMovimiento_gabineteId_fkey")
+  material   material?                 @relation(fields: [materialId], references: [id], onDelete: Cascade, map: "InventarioMovimiento_materialId_fkey")
+  usuario    usuario?                  @relation(fields: [usuarioId], references: [id], map: "InventarioMovimiento_usuarioId_fkey")
+
+  @@index([gabineteId], map: "InventarioMovimiento_gabineteId_fkey")
+  @@index([materialId], map: "InventarioMovimiento_materialId_fkey")
+  @@index([usuarioId], map: "InventarioMovimiento_usuarioId_fkey")
+}
+
+model itemcarrito {
+  id               String          @id @default(uuid())
+  carritoId        String
+  gabineteId       String?
+  disenoGuardadoId String?
+  cantidad         Int             @default(1)
+  precioUnitario   Decimal         @db.Decimal(10, 2)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime
+  carrito          carrito         @relation(fields: [carritoId], references: [id], onDelete: Cascade, map: "ItemCarrito_carritoId_fkey")
+  disenoguardado   disenoguardado? @relation(fields: [disenoGuardadoId], references: [id], map: "ItemCarrito_disenoGuardadoId_fkey")
+  gabinete         gabinete?       @relation(fields: [gabineteId], references: [id], map: "ItemCarrito_gabineteId_fkey")
+
+  @@index([carritoId], map: "ItemCarrito_carritoId_idx")
+  @@index([disenoGuardadoId], map: "ItemCarrito_disenoGuardadoId_idx")
+  @@index([gabineteId], map: "ItemCarrito_gabineteId_idx")
+}
+
+model material {
+  id                   String                 @id @default(uuid())
+  nombre               String                 @db.VarChar(150)
+  codigo               String                 @unique(map: "Material_codigo_key") @db.VarChar(50)
+  categoria            material_categoria
+  unidadMedida         material_unidadMedida
+  stockActual          Int                    @default(0)
+  stockMinimo          Int                    @default(0)
+  costoUnitario        Decimal?               @db.Decimal(10, 2)
+  descripcion          String?                @db.Text
+  activo               Boolean                @default(true)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  inventariomovimiento inventariomovimiento[]
+}
+
+model tokenacceso {
+  id        String           @id @default(uuid())
+  tokenHash String           @unique(map: "TokenAcceso_tokenHash_key")
+  tipo      tokenacceso_tipo
   expiraEn  DateTime
-  usado     Boolean  @default(false)
-  creadoEn  DateTime @default(now())
+  usado     Boolean          @default(false)
+  creadoEn  DateTime         @default(now())
   usuarioId String
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario   usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade, map: "TokenAcceso_usuarioId_fkey")
 
-  @@index([usuarioId, tipo])
-  @@index([expiraEn])
+  @@index([expiraEn], map: "TokenAcceso_expiraEn_idx")
+  @@index([usuarioId, tipo], map: "TokenAcceso_usuarioId_tipo_idx")
 }
 
-model DisenoGuardado {
-  id             String   @id @default(uuid())
-  nombre         String   @db.VarChar(120)
-  descripcion    String?  @db.Text
-  configuracion  Json
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  usuarioId      String
-  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-
-  @@index([usuarioId])
+model usuario {
+  id                   String                 @id @default(uuid())
+  nombre               String
+  apellido             String
+  email                String                 @unique(map: "Usuario_email_key")
+  passwordHash         String
+  telefono             String?
+  fechaRegistro        DateTime               @default(now())
+  emailVerificado      Boolean                @default(false)
+  rol                  usuario_rol            @default(CLIENTE)
+  carrito              carrito?
+  disenoguardado       disenoguardado[]
+  inventariomovimiento inventariomovimiento[]
+  tokenacceso          tokenacceso[]
 }
 
-enum TipoToken {
+enum inventariomovimiento_tipo {
+  ENTRADA
+  SALIDA
+  AJUSTE
+}
+
+enum tokenacceso_tipo {
   VERIFICACION_EMAIL
   RECUPERACION_PASSWORD
 }
 
-enum Rol {
-  CLIENTE
-  ADMIN
-}
-
-enum CategoriaMaterial {
+enum material_categoria {
   MDF
   MELAMINA
   METAL
@@ -69,7 +169,7 @@ enum CategoriaMaterial {
   OTRO
 }
 
-enum UnidadMedida {
+enum material_unidadMedida {
   UNIDAD
   KG
   M
@@ -79,85 +179,30 @@ enum UnidadMedida {
   BOLSA
 }
 
-enum TipoMovimientoInventario {
-  ENTRADA
-  SALIDA
-  AJUSTE
+enum usuario_rol {
+  CLIENTE
+  ADMIN
 }
 
-model Material {
-  id            String                 @id @default(uuid())
-  nombre        String                 @db.VarChar(150)
-  codigo        String                 @unique @db.VarChar(50)
-  categoria     CategoriaMaterial
-  unidadMedida  UnidadMedida
-  stockActual   Int                    @default(0)
-  stockMinimo   Int                    @default(0)
-  costoUnitario Decimal?               @db.Decimal(10, 2)
-  descripcion   String?                @db.Text
-  activo        Boolean                @default(true)
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  movimientos   InventarioMovimiento[]
-}
-
-model InventarioMovimiento {
-  id         String                   @id @default(uuid())
-  materialId String?
-  material   Material?                @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  tipo       TipoMovimientoInventario
-  cantidad   Int
-  motivo     String?
-  referencia String?
-  fecha      DateTime                 @default(now())
-  usuarioId  String?
-  usuario    Usuario?                 @relation(fields: [usuarioId], references: [id])
-  createdAt  DateTime                 @default(now())
-  gabineteId String?
-  gabinete   Gabinete?                @relation(fields: [gabineteId], references: [id], onDelete: SetNull)
-}
-
-enum TamañoGabinete {
-  FULL_TOWER
-  MID_TOWER
-  MINI_TOWER
-}
-
-enum FormatoGabinete {
+enum gabinete_formato {
   ATX
   MICRO_ATX
   ITX
 }
 
-enum MaterialGabinete {
+enum gabinete_materialChasis {
   ACERO
   ALUMINIO
 }
 
-enum PanelesGabinete {
+enum gabinete_panel {
   VIDRIO_TEMPLADO
   ACRILICO
   MALLADO
 }
 
-model Gabinete {
-  id             String                 @id @default(uuid())
-  nombre         String                 @db.VarChar(150)
-  marca          String                 @db.VarChar(150)
-  costoUnitario  Decimal                @db.Decimal(10, 2)
-  stockActual    Int                    @default(0)
-  stockMinimo    Int                    @default(0)
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-  activo         Boolean                @default(true)
-  tamano        TamañoGabinete
-  formato        FormatoGabinete
-  materialChasis MaterialGabinete
-  panel          PanelesGabinete
-  movimientos    InventarioMovimiento[]
+enum gabinete_tamano {
+  FULL_TOWER
+  MID_TOWER
+  MINI_TOWER
 }
-
-datasource db {
-  provider = "mysql"
-}
-

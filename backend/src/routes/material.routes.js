@@ -7,11 +7,14 @@ const {
   editarMaterial,
   eliminarMaterial,
 } = require('../controllers/material.controller');
+const { verificarToken, verificarAdmin } = require('../middleware/auth.middleware');  
 
-router.post('/', crearMaterial);
 router.get('/', listarMateriales);
 router.get('/:id', obtenerMaterial);
-router.put('/:id', editarMaterial);
-router.delete('/:id', eliminarMaterial);
+
+router.post('/', verificarToken, verificarAdmin, crearMaterial);
+router.put('/:id', verificarToken, verificarAdmin, editarMaterial);
+router.delete('/:id', verificarToken, verificarAdmin, eliminarMaterial);
+
 
 module.exports = router;

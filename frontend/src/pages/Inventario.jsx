@@ -6,8 +6,11 @@ const UNIDADES = ['UNIDAD', 'KG', 'M', 'M2', 'CM', 'LATA', 'BOLSA'];
 
 const FORM_VACIO = {
   nombre: '', codigo: '', categoria: 'MDF', unidadMedida: 'UNIDAD',
-  stockActual: 0, stockMinimo: 0, costoUnitario: '', descripcion: '',
+  stockActual: '', stockMinimo: '', costoUnitario: '', descripcion: '',
 };
+
+const INPUT_CLASS = 'w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500';
+const LABEL_CLASS = 'block text-sm font-medium text-gray-700 mb-1';
 
 export default function Inventario() {
   const [materiales, setMateriales] = useState([]);
@@ -39,12 +42,26 @@ export default function Inventario() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const stockActual = Number(form.stockActual);
+    const stockMinimo = Number(form.stockMinimo);
+
+    // El stock nunca puede ser 0 (ni negativo, ni con decimales)
+    if (
+      !Number.isInteger(stockActual) || stockActual < 1 ||
+      !Number.isInteger(stockMinimo) || stockMinimo < 1
+    ) {
+      setError('El stock actual y el stock mínimo tienen que ser números enteros mayores a 0.');
+      return;
+    }
+
     const payload = {
       ...form,
-      stockActual: Number(form.stockActual),
-      stockMinimo: Number(form.stockMinimo),
+      stockActual,
+      stockMinimo,
       costoUnitario: form.costoUnitario ? Number(form.costoUnitario) : null,
     };
+
     try {
       if (editandoId) {
         await editarMaterial(editandoId, payload);
@@ -55,13 +72,19 @@ export default function Inventario() {
       setEditandoId(null);
       setError('');
       cargarMateriales();
-    } catch {
-      setError(editandoId ? 'Error al editar el material.' : 'Error al crear el material. Revisá que el código no esté repetido.');
+    } catch (requestError) {
+      const status = requestError.response?.status;
+      if (status === 401 || status === 403) {
+        setError('Necesitás iniciar sesión como administrador para modificar materiales.');
+      } else {
+        setError(editandoId ? 'Error al editar el material.' : 'Error al crear el material. Revisá que el código no esté repetido.');
+      }
     }
   };
 
   const handleEditarClick = (material) => {
     setEditandoId(material.id);
+    setError('');
     setForm({
       nombre: material.nombre,
       codigo: material.codigo,
@@ -77,16 +100,26 @@ export default function Inventario() {
   const handleCancelarEdicion = () => {
     setEditandoId(null);
     setForm(FORM_VACIO);
+    setError('');
   };
 
   const handleEliminar = async (id) => {
     if (!confirm('¿Seguro que querés eliminar este material?')) return;
-    await eliminarMaterial(id);
-    if (editandoId === id) handleCancelarEdicion();
-    cargarMateriales();
+    try {
+      await eliminarMaterial(id);
+      if (editandoId === id) handleCancelarEdicion();
+      cargarMateriales();
+    } catch (requestError) {
+      const status = requestError.response?.status;
+      setError(
+        status === 401 || status === 403
+          ? 'Necesitás iniciar sesión como administrador para eliminar materiales.'
+          : 'Error al eliminar el material.',
+      );
+    }
   };
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Gestión de Inventario</h1>
@@ -110,18 +143,48 @@ export default function Inventario() {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 mb-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <input name="nombre" placeholder="Nombre" value={form.nombre} onChange={handleChange} required className="border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <input name="codigo" placeholder="Código" value={form.codigo} onChange={handleChange} required className="border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <select name="categoria" value={form.categoria} onChange={handleChange} className="border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <input name="nombre" placeholder="Nombre" value={form.nombre} onChange={handleChange} required className={INPUT_CLASS} />
+          <input name="codigo" placeholder="Código" value={form.codigo} onChange={handleChange} required className={INPUT_CLASS} />
+          <select name="categoria" value={form.categoria} onChange={handleChange} className={INPUT_CLASS}>
             {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select name="unidadMedida" value={form.unidadMedida} onChange={handleChange} className="border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select name="unidadMedida" value={form.unidadMedida} onChange={handleChange} className={INPUT_CLASS}>
             {UNIDADES.map((u) => <option key={u} value={u}>{u}</option>)}
           </select>
-          <input name="stockActual" type="number" placeholder="Stock actual" value={form.stockActual} onChange={handleChange} className="border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <input name="stockMinimo" type="number" placeholder="Stock mínimo" value={form.stockMinimo} onChange={handleChange} className="border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <input name="costoUnitario" type="number" step="0.01" placeholder="Costo unitario" value={form.costoUnitario} onChange={handleChange} className="border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <input name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} className="border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+          <div>
+            <label htmlFor="stockActual" className={LABEL_CLASS}>Cantidad de stock actual</label>
+            <input
+              id="stockActual"
+              name="stockActual"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Ej: 10"
+              value={form.stockActual}
+              onChange={handleChange}
+              required
+              className={INPUT_CLASS}
+            />
+          </div>
+          <div>
+            <label htmlFor="stockMinimo" className={LABEL_CLASS}>Cantidad de stock mínimo</label>
+            <input
+              id="stockMinimo"
+              name="stockMinimo"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Ej: 5"
+              value={form.stockMinimo}
+              onChange={handleChange}
+              required
+              className={INPUT_CLASS}
+            />
+          </div>
+
+          <input name="costoUnitario" type="number" step="0.01" placeholder="Costo unitario" value={form.costoUnitario} onChange={handleChange} className={INPUT_CLASS} />
+          <input name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} className={INPUT_CLASS} />
 
           <div className="sm:col-span-2 flex gap-2 mt-2">
             <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded font-medium hover:bg-blue-700 transition-colors">
