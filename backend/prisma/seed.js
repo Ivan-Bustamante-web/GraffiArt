@@ -1,5 +1,46 @@
 require('dotenv').config();
 const prisma = require('../src/lib/prisma.js');
+const bcrypt = require('bcrypt');          
+const { randomUUID } = require('crypto');  
+
+const CATEGORIAS = [
+  { nombre: 'Gamer', descripcion: 'Gabinetes con iluminación RGB y paneles de vidrio' },
+  { nombre: 'Oficina', descripcion: 'Gabinetes sobrios y económicos para uso diario' },
+  { nombre: 'Compactos', descripcion: 'Gabinetes mini torre y formatos ITX / Micro ATX' },
+  { nombre: 'Premium', descripcion: 'Gabinetes full tower y de gama alta' },
+];
+
+async function seedCategorias() {
+  for (const categoria of CATEGORIAS) {
+    await prisma.categoriaProducto.upsert({
+      where: { nombre: categoria.nombre },
+      update: { descripcion: categoria.descripcion },
+      create: categoria,
+    });
+  }
+  console.log('Categorías cargadas.');
+}
+
+async function seedAdmin() {
+  const email = (process.env.ADMIN_EMAIL || 'admin@gmail.com').trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD || 'madredeDios';
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  await prisma.usuario.upsert({
+    where: { email },
+    update: { rol: 'ADMIN', emailVerificado: true },
+    create: {
+      id: randomUUID(),
+      nombre: 'Administrador',
+      apellido: 'GraffiArt',
+      email,
+      passwordHash,
+      rol: 'ADMIN',
+      emailVerificado: true,
+    },
+  });
+  console.log(`Administrador listo: ${email}`);
+}
 
 async function main() {
   const gabinetesData = [
@@ -225,6 +266,9 @@ async function main() {
       create: gabinete,
     });
   }
+
+  await seedCategorias();   
+  await seedAdmin(); 
 
   console.log('¡Se han actualizado los gabinetes exitosamente!');
 }
