@@ -31,11 +31,13 @@ function App() {
           <div className="flex gap-2">
             <NavLink to="/" className={linkClass} end>Configurador</NavLink>
             <NavLink to="/productos" className={linkClass}>Productos</NavLink>
-            <NavLink to="/inventario" className={linkClass}>Inventario</NavLink>
             <NavLink to="/perfil" className={linkClass}>Mi perfil</NavLink>
             <NavLink to="/carrito" className={({ isActive }) => `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>Carrito {cantidadTotal > 0 && <span className="ml-1 bg-blue-600 text-white px-2 py-0.5 rounded-full text-xs">{cantidadTotal}</span>}</NavLink>
             {usuario?.rol === "ADMIN" && (
-              <NavLink to="/admin" className={linkClass}>Administración</NavLink>
+              <>
+                <NavLink to="/inventario" className={linkClass}>Inventario</NavLink>
+                <NavLink to="/admin" className={linkClass}>Administración</NavLink>
+              </>
             )}
             {usuario ? (
               <div className="flex items-center gap-2">
@@ -63,7 +65,7 @@ function App() {
         <Route path="/productos/:id" element={<ProductoDetallePage />} />
         <Route path="/configurador" element={<ConfiguratorPage />} />
         <Route path="/carrito" element={<CarritoPage />} />
-        <Route path="/inventario" element={<Inventario />} />
+        <Route path="/inventario" element={<AdminRoute><Inventario /></AdminRoute>} />
         <Route path="/perfil" element={<Perfil />} />
         <Route path="/login" element={<AuthPage />} />
         <Route path="/register" element={<AuthPage />} />
