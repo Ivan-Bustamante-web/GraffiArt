@@ -32,21 +32,35 @@ model disenoguardado {
 }
 
 model gabinete {
-  id                   String                  @id
+  id                   String                  @id @default(uuid())
   nombre               String                  @db.VarChar(150)
   marca                String                  @db.VarChar(150)
   costoUnitario        Decimal                 @db.Decimal(10, 2)
   stockActual          Int                     @default(0)
   stockMinimo          Int                     @default(0)
   createdAt            DateTime                @default(now())
-  updatedAt            DateTime
+  updatedAt            DateTime                @updatedAt
   activo               Boolean                 @default(true)
   formato              gabinete_formato
   materialChasis       gabinete_materialChasis
   panel                gabinete_panel
   tamano               gabinete_tamano
+  categoriaId          String?
+  categoria            CategoriaProducto?      @relation(fields: [categoriaId], references: [id], onDelete: SetNull, map: "Gabinete_categoriaId_fkey")
   inventariomovimiento inventariomovimiento[]
   itemcarrito          itemcarrito[]
+
+  @@index([categoriaId], map: "Gabinete_categoriaId_idx")
+}
+
+model CategoriaProducto {
+  id          String     @id @default(uuid())
+  nombre      String     @unique @db.VarChar(100)
+  descripcion String?    @db.Text
+  activo      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  productos   gabinete[]
 }
 
 model inventariomovimiento {

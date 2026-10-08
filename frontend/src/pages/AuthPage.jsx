@@ -197,7 +197,7 @@ export default function AuthPage() {
         });
 
         storeLogin(response.usuario, response.token);
-        navigate("/");
+        navigate(response.usuario.rol === "ADMIN" ? "/admin" : "/");
       }
     } catch (requestError) {
       const respData = requestError.response?.data;

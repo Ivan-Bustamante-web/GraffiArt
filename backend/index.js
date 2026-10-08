@@ -7,12 +7,15 @@ const usuarioRoutes = require('./src/routes/usuario.routes');
 const disenoRoutes = require('./src/routes/diseno.routes');
 const carritoRoutes = require('./src/routes/carrito.routes');
 const gabineteRoutes = require('./src/routes/gabinete.routes');
+const categoriaRoutes = require('./src/routes/categoria.routes');
+const productoRoutes = require('./src/routes/producto.routes');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-
+app.use('/api/categorias', categoriaRoutes);
+app.use('/api/productos', productoRoutes);
 
 app.get('/', (req, res) => {
   res.json({ ok: true, message: 'API GraffiArt funcionando' });
