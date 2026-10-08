@@ -5,7 +5,10 @@ export default function CarritoPage() {
     const { carrito, incrementarCantidad, decrementarCantidad, removerDelCarrito, vaciarCarrito } = useCartStore();
     const navigate = useNavigate();
 
-    const precioTotal = carrito.reduce((acc, item) => acc + (item.costoUnitario * item.cantidad), 0);
+    const precioTotal = carrito.reduce((acc, item) => {
+        const precioUnitario = Number(item.precioUnitario ?? item.gabinete?.costoUnitario ?? item.costoUnitario ?? 0);
+        return acc + precioUnitario * item.cantidad;
+    }, 0);
 
     const handleCheckout = () => {
         alert("¡Compra realizada con éxito! (Simulación)");
@@ -35,28 +38,37 @@ export default function CarritoPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Lista de productos en el carrito */}
                 <div className="lg:col-span-2 space-y-4">
-                    {carrito.map(item => (
+                    {carrito.map(item => {
+                        const gabinete = item.gabinete || item;
+                        const nombre = gabinete.nombre || item.disenoguardado?.nombre || 'Diseño personalizado';
+                        const precioUnitario = Number(item.precioUnitario ?? gabinete.costoUnitario ?? 0);
+                        const subtotal = precioUnitario * item.cantidad;
+
+                        return (
                         <div key={item.id} className="bg-gray-800 border border-gray-700 rounded-lg p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div className="space-y-2">
-                                <h2 className="text-lg font-semibold text-white">{item.nombre}</h2>
-                                <p className="text-gray-400 text-sm">Marca: <span className="text-white">{item.marca}</span></p>
-                                <div className="text-xs text-gray-300 space-x-2">
-                                    <span>Formato: <strong className="text-white">{item.formato}</strong></span>
-                                    <span>•</span>
-                                    <span>Tamaño: <strong className="text-white">{item.tamano}</strong></span>
-                                    <span>•</span>
-                                    <span>Panel: <strong className="text-white">{item.panel}</strong></span>
-                                </div>
+                                <h2 className="text-lg font-semibold text-white">{nombre}</h2>
+                                {gabinete.marca && <p className="text-gray-400 text-sm">Marca: <span className="text-white">{gabinete.marca}</span></p>}
+                                {gabinete.formato && (
+                                    <div className="text-xs text-gray-300 space-x-2">
+                                        <span>Formato: <strong className="text-white">{gabinete.formato}</strong></span>
+                                        <span>•</span>
+                                        <span>Tamaño: <strong className="text-white">{gabinete.tamano}</strong></span>
+                                        <span>•</span>
+                                        <span>Panel: <strong className="text-white">{gabinete.panel}</strong></span>
+                                    </div>
+                                )}
                                 
                                 {/* Botón de ver detalles en la tarjeta del producto */}
                                 <button 
-                                    onClick={() => navigate(`/productos/${item.id}`)}
+                                    onClick={() => navigate(`/productos/${gabinete.id}`)}
                                     className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-1.5 rounded transition font-medium cursor-pointer inline-block"
+                                    hidden={!gabinete.id}
                                 >
                                     Ver detalles
                                 </button>
 
-                                <p className="text-green-400 font-bold pt-1">$ {item.costoUnitario.toLocaleString()} c/u</p>
+                                <p className="text-green-400 font-bold pt-1">$ {precioUnitario.toLocaleString()} c/u</p>
                             </div>
 
                             <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-700">
@@ -78,7 +90,7 @@ export default function CarritoPage() {
 
                                 <div className="text-right min-w-[90px]">
                                     <p className="text-xs text-gray-400">Subtotal</p>
-                                    <p className="text-white font-bold">$ {(item.costoUnitario * item.cantidad).toLocaleString()}</p>
+                                    <p className="text-white font-bold">$ {subtotal.toLocaleString()}</p>
                                 </div>
 
                                 <button 
@@ -90,7 +102,8 @@ export default function CarritoPage() {
                                 </button>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
 
                     <div className="flex justify-between items-center pt-2">
                         <button 

@@ -4,10 +4,11 @@ generator client {
 
 datasource db {
   provider = "mysql"
+
 }
 
 model carrito {
-  id          String        @id
+  id          String        @id @default(uuid())
   usuarioId   String        @unique(map: "Carrito_usuarioId_key")
   createdAt   DateTime      @default(now())
   updatedAt   DateTime
@@ -18,7 +19,7 @@ model carrito {
 }
 
 model disenoguardado {
-  id            String        @id
+  id            String        @id @default(uuid())
   nombre        String        @db.VarChar(120)
   descripcion   String?       @db.Text
   configuracion String        @db.LongText
@@ -64,7 +65,7 @@ model CategoriaProducto {
 }
 
 model inventariomovimiento {
-  id         String                    @id
+  id         String                     @id @default(uuid())
   materialId String?
   tipo       inventariomovimiento_tipo
   cantidad   Int
@@ -84,7 +85,7 @@ model inventariomovimiento {
 }
 
 model itemcarrito {
-  id               String          @id
+  id               String          @id @default(uuid())
   carritoId        String
   gabineteId       String?
   disenoGuardadoId String?
@@ -102,7 +103,7 @@ model itemcarrito {
 }
 
 model material {
-  id                   String                 @id
+  id                   String                 @id @default(uuid())
   nombre               String                 @db.VarChar(150)
   codigo               String                 @unique(map: "Material_codigo_key") @db.VarChar(50)
   categoria            material_categoria
@@ -118,7 +119,7 @@ model material {
 }
 
 model tokenacceso {
-  id        String           @id
+  id        String           @id @default(uuid())
   tokenHash String           @unique(map: "TokenAcceso_tokenHash_key")
   tipo      tokenacceso_tipo
   expiraEn  DateTime
@@ -132,7 +133,7 @@ model tokenacceso {
 }
 
 model usuario {
-  id                   String                 @id
+  id                   String                 @id @default(uuid())
   nombre               String
   apellido             String
   email                String                 @unique(map: "Usuario_email_key")

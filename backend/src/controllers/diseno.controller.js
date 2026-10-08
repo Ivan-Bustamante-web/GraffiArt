@@ -2,7 +2,7 @@ const prisma = require('../lib/prisma');
 
 async function listarDisenos(req, res) {
   try {
-    const disenos = await prisma.disenoGuardado.findMany({
+    const disenos = await prisma.disenoguardado.findMany({
       where: { usuarioId: req.usuario.id },
       orderBy: { updatedAt: 'desc' },
     });
@@ -21,7 +21,7 @@ async function crearDiseno(req, res) {
       return res.status(400).json({ error: 'Nombre y configuración son obligatorios' });
     }
 
-    const diseno = await prisma.disenoGuardado.create({
+    const diseno = await prisma.disenoguardado.create({
       data: {
         nombre,
         descripcion: descripcion || '',
@@ -40,7 +40,7 @@ async function actualizarDiseno(req, res) {
   try {
     const { nombre, descripcion, configuracion } = req.body;
 
-    const existente = await prisma.disenoGuardado.findFirst({
+    const existente = await prisma.disenoguardado.findFirst({
       where: { id: req.params.id, usuarioId: req.usuario.id },
     });
 
@@ -48,7 +48,7 @@ async function actualizarDiseno(req, res) {
       return res.status(404).json({ error: 'Diseño no encontrado' });
     }
 
-    const diseno = await prisma.disenoGuardado.update({
+    const diseno = await prisma.disenoguardado.update({
       where: { id: req.params.id },
       data: {
         ...(nombre !== undefined && { nombre }),
@@ -65,7 +65,7 @@ async function actualizarDiseno(req, res) {
 
 async function eliminarDiseno(req, res) {
   try {
-    const existente = await prisma.disenoGuardado.findFirst({
+    const existente = await prisma.disenoguardado.findFirst({
       where: { id: req.params.id, usuarioId: req.usuario.id },
     });
 
@@ -73,7 +73,7 @@ async function eliminarDiseno(req, res) {
       return res.status(404).json({ error: 'Diseño no encontrado' });
     }
 
-    await prisma.disenoGuardado.delete({
+    await prisma.disenoguardado.delete({
       where: { id: req.params.id },
     });
 

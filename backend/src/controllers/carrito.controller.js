@@ -9,7 +9,7 @@ async function actualizarCantidadItem(req, res){
       return res.status(400).json({ error: 'La cantidad debe ser mayor a 0'});
     }
 
-    const itemExistente = await prisma.itemCarrito.findFirst({
+    const itemExistente = await prisma.itemcarrito.findFirst({
       where: {
         id,
         carrito: { usuarioId: req.usuario.id },
@@ -20,7 +20,7 @@ async function actualizarCantidadItem(req, res){
       return res.status(400).json({ error: 'Item no encontrado en el carrito'});
     }
 
-    await prisma.itemCarrito.update({
+    await prisma.itemcarrito.update({
       where: { id },
       data: { cantidad: parseInt(cantidad) },
     });
@@ -28,8 +28,8 @@ async function actualizarCantidadItem(req, res){
     const carritoActualizado = await prisma.carrito.findUnique({
       where: { usuarioId: req.usuario.id },
       include: {
-        items: {
-          include: { gabinete: true, disenoGuardado: true},
+        itemcarrito: {
+          include: { gabinete: true, disenoguardado: true},
           orderBy: { createdAt: 'desc'},
         },
       },
@@ -45,7 +45,7 @@ async function eliminarItem(req, res) {
   try {
     const { id } = req.params;
 
-    const itemExistente = await prisma.itemCarrito.findFirst({
+    const itemExistente = await prisma.itemcarrito.findFirst({
       where: {
         id,
         carrito: { usuarioId: req.usuario.id },
@@ -56,15 +56,15 @@ async function eliminarItem(req, res) {
       return res.status(404).json({ error: 'Item no encontrado en el carrito'});
     }
 
-    await prisma.itemCarrito.delete({
+    await prisma.itemcarrito.delete({
       where: { id },
     });
 
     const carritoActualizado = await prisma.carrito.findUnique({
       where: { usuarioId: req.usuario.id },
       include: {
-        items: {
-          include: { gabinete: true, disenoGuardado: true},
+        itemcarrito: {
+          include: { gabinete: true, disenoguardado: true},
           orderBy: { createdAt: 'desc'},
         },
       },
@@ -78,9 +78,9 @@ async function eliminarItem(req, res) {
 
 
 function calcularTotalesCarrito(carrito) {
-    if (!carrito || !carrito.items) return { ...carrito, total: 0};
+    if (!carrito || !carrito.itemcarrito) return { ...carrito, items: [], total: 0};
 
-    const itemsConSubtotal = carrito.items.map( item => {
+    const itemsConSubtotal = carrito.itemcarrito.map( item => {
         const subtotal = Number(item.precioUnitario) * item.cantidad;
         return {
             ...item,
@@ -102,10 +102,10 @@ async function obtenerCarrito(req, res) {
         let carrito = await prisma.carrito.findUnique({
             where: { usuarioId: req.usuario.id },
             include: {
-                items: {
+                itemcarrito: {
                     include: {
                         gabinete: true,
-                        disenoGuardado: true,
+                        disenoguardado: true,
                     },
                     orderBy: { createdAt: 'desc' },
                 },
@@ -114,12 +114,12 @@ async function obtenerCarrito(req, res) {
 
         if (!carrito) {
             carrito = await prisma.carrito.create({
-                data: { usuarioId: req.usuario.id },
+                data: { usuarioId: req.usuario.id, updatedAt: new Date() },
                 include: {
-                    items: {
+                    itemcarrito: {
                         include: {
                             gabinete: true,
-                            disenoGuardado: true,
+                            disenoguardado: true,
                         },
                     },
                 },
@@ -158,7 +158,7 @@ async function agregarItem(req, res) {
     }
 
     if (disenoGuardadoId) {
-      diseno = await prisma.disenoGuardado.findFirst({
+      diseno = await prisma.disenoguardado.findFirst({
         where: { id: disenoGuardadoId, usuarioId: req.usuario.id },
       });
 
@@ -176,12 +176,12 @@ async function agregarItem(req, res) {
 
     if (!carrito) {
       carrito = await prisma.carrito.create({
-        data: { usuarioId: req.usuario.id },
+        data: { usuarioId: req.usuario.id, updatedAt: new Date() },
       });
     }
 
     //Verifica si el item ya existe en el carrito para sumar la cantidad o crearlo
-    const itemExistente = await prisma.itemCarrito.findFirst({
+    const itemExistente = await prisma.itemcarrito.findFirst({
       where: {
         carritoId: carrito.id,
         ...(gabineteId ? { gabineteId } : { disenoGuardadoId }),
@@ -191,18 +191,19 @@ async function agregarItem(req, res) {
     const cantidadAEnviar = parseInt(cantidad) > 0 ? parseInt(cantidad) : 1;
 
     if (itemExistente) {
-      await prisma.itemCarrito.update({
+      await prisma.itemcarrito.update({
         where: { id: itemExistente.id },
         data: { cantidad: itemExistente.cantidad + cantidadAEnviar },
       });
     } else {
-      await prisma.itemCarrito.create({
+      await prisma.itemcarrito.create({
         data: {
           carritoId: carrito.id,
           gabineteId: gabineteId || null,
           disenoGuardadoId: disenoGuardadoId || null,
           cantidad: cantidadAEnviar,
           precioUnitario,
+          updatedAt: new Date(),
         },
       });
     }
@@ -211,10 +212,10 @@ async function agregarItem(req, res) {
     const carritoActualizado = await prisma.carrito.findUnique({
       where: { id: carrito.id },
       include: {
-        items: {
+        itemcarrito: {
           include: {
             gabinete: true,
-            disenoGuardado: true,
+            disenoguardado: true,
           },
           orderBy: { createdAt: 'desc' },
         },

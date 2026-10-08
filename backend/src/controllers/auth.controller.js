@@ -11,7 +11,7 @@ function hashToken(token) {
 
 async function createToken(usuarioId, tipo, minutes) {
   const token = crypto.randomBytes(32).toString('hex');
-  await prisma.tokenAcceso.create({
+  await prisma.tokenacceso.create({
     data: {
       tokenHash: hashToken(token),
       tipo,
@@ -156,7 +156,7 @@ async function resendVerification(req, res) {
       return res.status(400).json({ error: 'Este correo ya se encuentra verificado. Podés iniciar sesión.' });
     }
 
-    await prisma.tokenAcceso.updateMany({
+    await prisma.tokenacceso.updateMany({
       where: { usuarioId: usuario.id, tipo: 'VERIFICACION_EMAIL', usado: false },
       data: { usado: true },
     });
@@ -185,7 +185,7 @@ async function verifyEmail(req, res) {
       return res.status(400).json({ error: 'El token de verificación es obligatorio' });
     }
     const tokenClean = String(rawToken).trim().toLowerCase();
-    const accessToken = await prisma.tokenAcceso.findFirst({
+    const accessToken = await prisma.tokenacceso.findFirst({
       where: { tokenHash: hashToken(tokenClean), tipo: 'VERIFICACION_EMAIL' },
       include: { usuario: true },
     });
@@ -208,7 +208,7 @@ async function verifyEmail(req, res) {
 
     await prisma.$transaction([
       prisma.usuario.update({ where: { id: accessToken.usuarioId }, data: { emailVerificado: true } }),
-      prisma.tokenAcceso.update({ where: { id: accessToken.id }, data: { usado: true } }),
+      prisma.tokenacceso.update({ where: { id: accessToken.id }, data: { usado: true } }),
     ]);
 
     res.json({ message: '¡Email verificado con éxito! Ya podés iniciar sesión.' });
@@ -227,7 +227,7 @@ async function forgotPassword(req, res) {
     const usuario = await prisma.usuario.findUnique({ where: { email: normalizedEmail } });
     if (!usuario) return res.json(genericResult);
 
-    await prisma.tokenAcceso.updateMany({
+    await prisma.tokenacceso.updateMany({
       where: { usuarioId: usuario.id, tipo: 'RECUPERACION_PASSWORD', usado: false },
       data: { usado: true },
     });
@@ -264,7 +264,7 @@ async function resetPassword(req, res) {
       return res.status(400).json({ error: 'El código o token de recuperación es obligatorio' });
     }
 
-    const accessToken = await prisma.tokenAcceso.findFirst({
+    const accessToken = await prisma.tokenacceso.findFirst({
       where: { tokenHash: hashToken(tokenClean), tipo: 'RECUPERACION_PASSWORD' },
     });
 
@@ -288,7 +288,7 @@ async function resetPassword(req, res) {
           emailVerificado: true, // Proving email ownership activates the account
         },
       }),
-      prisma.tokenAcceso.update({ where: { id: accessToken.id }, data: { usado: true } }),
+      prisma.tokenacceso.update({ where: { id: accessToken.id }, data: { usado: true } }),
     ]);
 
     res.json({ message: 'Contraseña actualizada con éxito. Ya podés iniciar sesión.' });
