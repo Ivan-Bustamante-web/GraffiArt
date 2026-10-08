@@ -22,8 +22,8 @@ async function seedCategorias() {
 }
 
 async function seedAdmin() {
-  const email = (process.env.ADMIN_EMAIL || 'admin@graffiart.com').trim().toLowerCase();
-  const password = process.env.ADMIN_PASSWORD || 'Admin1234';
+  const email = (process.env.ADMIN_EMAIL || 'admin@gmail.com').trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD || 'madredeDios';
   const passwordHash = await bcrypt.hash(password, 10);
 
   await prisma.usuario.upsert({
