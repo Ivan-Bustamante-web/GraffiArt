@@ -4,3 +4,7 @@ node_modules/
 # Variables de entorno / Secretos
 .env
 .env.local
+
+# Postman y pruebas
+postman/
+*postman/
