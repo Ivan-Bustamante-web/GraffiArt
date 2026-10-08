@@ -5,6 +5,8 @@ const materialRoutes = require('./src/routes/material.routes');
 const authRoutes = require('./src/routes/auth.routes');
 const usuarioRoutes = require('./src/routes/usuario.routes');
 const disenoRoutes = require('./src/routes/diseno.routes');
+const carritoRoutes = require('./src/routes/carrito.routes');
+const gabineteRoutes = require('./src/routes/gabinete.routes');
 
 const app = express();
 
@@ -20,6 +22,8 @@ app.use('/api/materiales', materialRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/disenos', disenoRoutes);
+app.use('/api/carrito', carritoRoutes);
+app.use('/api/gabinetes', gabineteRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
