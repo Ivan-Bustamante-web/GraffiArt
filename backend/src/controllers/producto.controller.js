@@ -1,10 +1,10 @@
-const prisma = require('../lib/prisma');
+const { repo } = require('../lib/data-source');
 
 async function listarProductos(req, res) {
   try {
-    const productos = await prisma.gabinete.findMany({
-      include: { categoria: true },
-      orderBy: { createdAt: 'desc' },
+    const productos = await repo('gabinete').find({
+      relations: { categoria: true },
+      order: { createdAt: 'DESC' },
     });
 
     res.json(productos);
@@ -15,9 +15,9 @@ async function listarProductos(req, res) {
 
 async function obtenerProducto(req, res) {
   try {
-    const producto = await prisma.gabinete.findUnique({
+    const producto = await repo('gabinete').findOne({
       where: { id: req.params.id },
-      include: { categoria: true },
+      relations: { categoria: true },
     });
 
     if (!producto) {
@@ -87,16 +87,14 @@ async function crearProducto(req, res) {
     } = req.body;
 
     if (categoriaId) {
-      const categoria = await prisma.categoriaProducto.findUnique({
-        where: { id: categoriaId },
-      });
+      const categoria = await repo('CategoriaProducto').findOneBy({ id: categoriaId });
       if (!categoria) {
         return res.status(400).json({ error: 'La categoría seleccionada no existe' });
       }
     }
 
-    const producto = await prisma.gabinete.create({
-      data: {
+    const creado = await repo('gabinete').save(
+      repo('gabinete').create({
         nombre: nombre.trim(),
         marca: marca.trim(),
         costoUnitario: Number(costoUnitario),
@@ -107,8 +105,11 @@ async function crearProducto(req, res) {
         materialChasis,
         panel,
         categoriaId: categoriaId || null,
-      },
-      include: { categoria: true },
+      })
+    );
+    const producto = await repo('gabinete').findOne({
+      where: { id: creado.id },
+      relations: { categoria: true },
     });
 
     res.status(201).json(producto);
@@ -151,42 +152,38 @@ async function editarProducto(req, res) {
     }
 
     if (data.categoriaId) {
-      const categoria = await prisma.categoriaProducto.findUnique({
-        where: { id: data.categoriaId },
-      });
+      const categoria = await repo('CategoriaProducto').findOneBy({ id: data.categoriaId });
       if (!categoria) {
         return res.status(400).json({ error: 'La categoría seleccionada no existe' });
       }
     }
 
-    const producto = await prisma.gabinete.update({
+    if (!(await repo('gabinete').existsBy({ id: req.params.id }))) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+    if (Object.keys(data).length) {
+      await repo('gabinete').update({ id: req.params.id }, data);
+    }
+    const producto = await repo('gabinete').findOne({
       where: { id: req.params.id },
-      data,
-      include: { categoria: true },
+      relations: { categoria: true },
     });
 
     res.json(producto);
   } catch (error) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Producto no encontrado' });
-    }
-
     res.status(400).json({ error: error.message });
   }
 }
 
 async function eliminarProducto(req, res) {
   try {
-    await prisma.gabinete.delete({
-      where: { id: req.params.id },
-    });
-
-    res.status(204).send();
-  } catch (error) {
-    if (error.code === 'P2025') {
+    const { affected } = await repo('gabinete').delete({ id: req.params.id });
+    if (!affected) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
+    res.status(204).send();
+  } catch (error) {
     res.status(400).json({ error: error.message });
   }
 }

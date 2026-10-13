@@ -1,8 +1,8 @@
-const prisma = require('../lib/prisma');
+const { repo } = require('../lib/data-source');
 
 async function getPerfil(req, res) {
   try {
-    const usuario = await prisma.usuario.findUnique({
+    const usuario = await repo('usuario').findOne({
       where: { id: req.usuario.id },
       select: {
         id: true,
@@ -28,9 +28,9 @@ async function updatePerfil(req, res) {
     if (!nombre || !apellido) {
       return res.status(400).json({ error: 'Nombre y apellido son obligatorios' });
     }
-    const usuario = await prisma.usuario.update({
+    await repo('usuario').update({ id: req.usuario.id }, { nombre, apellido, telefono });
+    const usuario = await repo('usuario').findOne({
       where: { id: req.usuario.id },
-      data: { nombre, apellido, telefono },
       select: {
         id: true,
         nombre: true,

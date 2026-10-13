@@ -1,9 +1,9 @@
-const prisma = require('../lib/prisma');
+const { repo } = require('../lib/data-source');
 
 // Crear un material
 async function crearMaterial(req, res) {
   try {
-    const material = await prisma.material.create({ data: req.body });
+    const material = await repo('material').save(repo('material').create(req.body));
     res.status(201).json(material);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -13,7 +13,7 @@ async function crearMaterial(req, res) {
 // Listar todos los materiales
 async function listarMateriales(req, res) {
   try {
-    const materiales = await prisma.material.findMany();
+    const materiales = await repo('material').find();
     res.json(materiales);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -23,9 +23,7 @@ async function listarMateriales(req, res) {
 // Ver un material por id
 async function obtenerMaterial(req, res) {
   try {
-    const material = await prisma.material.findUnique({
-      where: { id: req.params.id },
-    });
+    const material = await repo('material').findOneBy({ id: req.params.id });
     if (!material) return res.status(404).json({ error: 'Material no encontrado' });
     res.json(material);
   } catch (error) {
@@ -36,11 +34,11 @@ async function obtenerMaterial(req, res) {
 // Editar un material
 async function editarMaterial(req, res) {
   try {
-    const material = await prisma.material.update({
-      where: { id: req.params.id },
-      data: req.body,
-    });
-    res.json(material);
+    if (!(await repo('material').existsBy({ id: req.params.id }))) {
+      return res.status(404).json({ error: 'Material no encontrado' });
+    }
+    await repo('material').update({ id: req.params.id }, req.body);
+    res.json(await repo('material').findOneBy({ id: req.params.id }));
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -49,7 +47,8 @@ async function editarMaterial(req, res) {
 // Eliminar un material
 async function eliminarMaterial(req, res) {
   try {
-    await prisma.material.delete({ where: { id: req.params.id } });
+    const { affected } = await repo('material').delete({ id: req.params.id });
+    if (!affected) return res.status(404).json({ error: 'Material no encontrado' });
     res.status(204).send();
   } catch (error) {
     res.status(400).json({ error: error.message });

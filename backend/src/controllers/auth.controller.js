@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const prisma = require('../lib/prisma');
+const { AppDataSource, repo } = require('../lib/data-source');
 
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
@@ -11,14 +11,14 @@ function hashToken(token) {
 
 async function createToken(usuarioId, tipo, minutes) {
   const token = crypto.randomBytes(32).toString('hex');
-  await prisma.tokenacceso.create({
-    data: {
+  await repo('tokenacceso').save(
+    repo('tokenacceso').create({
       tokenHash: hashToken(token),
       tipo,
       usuarioId,
       expiraEn: new Date(Date.now() + minutes * 60000),
-    },
-  });
+    })
+  );
   return token;
 }
 
@@ -67,7 +67,7 @@ async function login(req, res) {
       return res.status(400).json({ error: 'Debés ingresar email y contraseña' });
     }
     const normalizedEmail = email.trim().toLowerCase();
-    const usuario = await prisma.usuario.findUnique({ where: { email: normalizedEmail } });
+    const usuario = await repo('usuario').findOneBy({ email: normalizedEmail });
     if (!usuario || !(await bcrypt.compare(password, usuario.passwordHash))) {
       return res.status(401).json({ error: 'Credenciales inválidas. Verificá tu email y contraseña.' });
     }
@@ -110,18 +110,18 @@ async function register(req, res) {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const existente = await prisma.usuario.findUnique({ where: { email: normalizedEmail } });
+    const existente = await repo('usuario').findOneBy({ email: normalizedEmail });
     if (existente) return res.status(409).json({ error: 'Ya existe una cuenta con ese email' });
 
-    const usuario = await prisma.usuario.create({
-      data: {
+    const usuario = await repo('usuario').save(
+      repo('usuario').create({
         nombre: nombre.trim(),
         apellido: apellido.trim(),
         email: normalizedEmail,
         passwordHash: await bcrypt.hash(password, 10),
         telefono: telefono?.trim() || null,
-      },
-    });
+      })
+    );
 
     const token = await createToken(usuario.id, 'VERIFICACION_EMAIL', 60);
     const verificationUrl = `${frontendUrl}/verificar-email?token=${token}`;
@@ -146,7 +146,7 @@ async function resendVerification(req, res) {
     if (!email?.trim()) return res.status(400).json({ error: 'Debés ingresar un email' });
 
     const normalizedEmail = email.trim().toLowerCase();
-    const usuario = await prisma.usuario.findUnique({ where: { email: normalizedEmail } });
+    const usuario = await repo('usuario').findOneBy({ email: normalizedEmail });
 
     if (!usuario) {
       return res.json({ message: 'Si el correo está registrado, enviaremos un enlace de activación.' });
@@ -156,10 +156,10 @@ async function resendVerification(req, res) {
       return res.status(400).json({ error: 'Este correo ya se encuentra verificado. Podés iniciar sesión.' });
     }
 
-    await prisma.tokenacceso.updateMany({
-      where: { usuarioId: usuario.id, tipo: 'VERIFICACION_EMAIL', usado: false },
-      data: { usado: true },
-    });
+    await repo('tokenacceso').update(
+      { usuarioId: usuario.id, tipo: 'VERIFICACION_EMAIL', usado: false },
+      { usado: true }
+    );
 
     const token = await createToken(usuario.id, 'VERIFICACION_EMAIL', 60);
     const verificationUrl = `${frontendUrl}/verificar-email?token=${token}`;
@@ -185,9 +185,9 @@ async function verifyEmail(req, res) {
       return res.status(400).json({ error: 'El token de verificación es obligatorio' });
     }
     const tokenClean = String(rawToken).trim().toLowerCase();
-    const accessToken = await prisma.tokenacceso.findFirst({
+    const accessToken = await repo('tokenacceso').findOne({
       where: { tokenHash: hashToken(tokenClean), tipo: 'VERIFICACION_EMAIL' },
-      include: { usuario: true },
+      relations: { usuario: true },
     });
 
     if (!accessToken) {
@@ -206,10 +206,10 @@ async function verifyEmail(req, res) {
       });
     }
 
-    await prisma.$transaction([
-      prisma.usuario.update({ where: { id: accessToken.usuarioId }, data: { emailVerificado: true } }),
-      prisma.tokenacceso.update({ where: { id: accessToken.id }, data: { usado: true } }),
-    ]);
+    await AppDataSource.transaction(async (manager) => {
+      await manager.update('usuario', { id: accessToken.usuarioId }, { emailVerificado: true });
+      await manager.update('tokenacceso', { id: accessToken.id }, { usado: true });
+    });
 
     res.json({ message: '¡Email verificado con éxito! Ya podés iniciar sesión.' });
   } catch (error) {
@@ -224,13 +224,13 @@ async function forgotPassword(req, res) {
     if (!email?.trim()) return res.status(400).json({ error: 'Debés ingresar un email' });
 
     const normalizedEmail = email.trim().toLowerCase();
-    const usuario = await prisma.usuario.findUnique({ where: { email: normalizedEmail } });
+    const usuario = await repo('usuario').findOneBy({ email: normalizedEmail });
     if (!usuario) return res.json(genericResult);
 
-    await prisma.tokenacceso.updateMany({
-      where: { usuarioId: usuario.id, tipo: 'RECUPERACION_PASSWORD', usado: false },
-      data: { usado: true },
-    });
+    await repo('tokenacceso').update(
+      { usuarioId: usuario.id, tipo: 'RECUPERACION_PASSWORD', usado: false },
+      { usado: true }
+    );
 
     const token = await createToken(usuario.id, 'RECUPERACION_PASSWORD', 30);
     const resetUrl = `${frontendUrl}/restablecer-password?token=${token}`;
@@ -264,8 +264,9 @@ async function resetPassword(req, res) {
       return res.status(400).json({ error: 'El código o token de recuperación es obligatorio' });
     }
 
-    const accessToken = await prisma.tokenacceso.findFirst({
-      where: { tokenHash: hashToken(tokenClean), tipo: 'RECUPERACION_PASSWORD' },
+    const accessToken = await repo('tokenacceso').findOneBy({
+      tokenHash: hashToken(tokenClean),
+      tipo: 'RECUPERACION_PASSWORD',
     });
 
     if (!accessToken) {
@@ -280,16 +281,15 @@ async function resetPassword(req, res) {
       return res.status(400).json({ error: 'El enlace o código ha expirado. Por favor, solicitá uno nuevo.' });
     }
 
-    await prisma.$transaction([
-      prisma.usuario.update({
-        where: { id: accessToken.usuarioId },
-        data: {
-          passwordHash: await bcrypt.hash(password, 10),
-          emailVerificado: true, // Proving email ownership activates the account
-        },
-      }),
-      prisma.tokenacceso.update({ where: { id: accessToken.id }, data: { usado: true } }),
-    ]);
+    const passwordHash = await bcrypt.hash(password, 10);
+    await AppDataSource.transaction(async (manager) => {
+      await manager.update(
+        'usuario',
+        { id: accessToken.usuarioId },
+        { passwordHash, emailVerificado: true } // Proving email ownership activates the account
+      );
+      await manager.update('tokenacceso', { id: accessToken.id }, { usado: true });
+    });
 
     res.json({ message: 'Contraseña actualizada con éxito. Ya podés iniciar sesión.' });
   } catch (error) {

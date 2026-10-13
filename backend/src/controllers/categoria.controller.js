@@ -1,17 +1,28 @@
-const prisma = require('../lib/prisma');
+const { repo } = require('../lib/data-source');
+
+const esDuplicado = (error) => (error.code || error.driverError?.code) === 'ER_DUP_ENTRY';
+
+async function conConteo(id) {
+  const categoria = await repo('CategoriaProducto').findOneBy({ id });
+  if (!categoria) return null;
+  const productos = await repo('gabinete').countBy({ categoriaId: id });
+  return { ...categoria, _count: { productos } };
+}
 
 async function listarCategorias(req, res) {
   try {
-    const categorias = await prisma.categoriaProducto.findMany({
-      orderBy: { nombre: 'asc' },
-      include: {
-        _count: {
-          select: { productos: true },
-        },
-      },
-    });
+    const categorias = await repo('CategoriaProducto')
+      .createQueryBuilder('c')
+      .loadRelationCountAndMap('c.totalProductos', 'c.productos')
+      .orderBy('c.nombre', 'ASC')
+      .getMany();
 
-    res.json(categorias);
+    res.json(
+      categorias.map(({ totalProductos, ...categoria }) => ({
+        ...categoria,
+        _count: { productos: totalProductos },
+      }))
+    );
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -28,19 +39,19 @@ async function crearCategoria(req, res) {
       });
     }
 
-    const categoria = await prisma.categoriaProducto.create({
-      data: {
+    const categoria = await repo('CategoriaProducto').save(
+      repo('CategoriaProducto').create({
         nombre: nombreLimpio,
         descripcion:
           typeof descripcion === 'string' && descripcion.trim()
             ? descripcion.trim()
             : null,
-      },
-    });
+      })
+    );
 
     res.status(201).json(categoria);
   } catch (error) {
-    if (error.code === 'P2002') {
+    if (esDuplicado(error)) {
       return res.status(409).json({
         error: 'Ya existe una categoría con ese nombre',
       });
@@ -76,26 +87,23 @@ async function editarCategoria(req, res) {
       data.activo = Boolean(activo);
     }
 
-    const categoria = await prisma.categoriaProducto.update({
-      where: { id: req.params.id },
-      data,
-      include: {
-        _count: {
-          select: { productos: true },
-        },
-      },
-    });
+    if (!(await repo('CategoriaProducto').existsBy({ id: req.params.id }))) {
+      return res.status(404).json({ error: 'Categoría no encontrada' });
+    }
+    if (Object.keys(data).length) {
+      await repo('CategoriaProducto').update({ id: req.params.id }, data);
+    }
+    const categoria = await conConteo(req.params.id);
+    if (!categoria) {
+      return res.status(404).json({ error: 'Categoría no encontrada' });
+    }
 
     res.json(categoria);
   } catch (error) {
-    if (error.code === 'P2002') {
+    if (esDuplicado(error)) {
       return res.status(409).json({
         error: 'Ya existe una categoría con ese nombre',
       });
-    }
-
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Categoría no encontrada' });
     }
 
     res.status(400).json({ error: error.message });
@@ -104,16 +112,13 @@ async function editarCategoria(req, res) {
 
 async function eliminarCategoria(req, res) {
   try {
-    await prisma.categoriaProducto.delete({
-      where: { id: req.params.id },
-    });
-
-    res.status(204).send();
-  } catch (error) {
-    if (error.code === 'P2025') {
+    const { affected } = await repo('CategoriaProducto').delete({ id: req.params.id });
+    if (!affected) {
       return res.status(404).json({ error: 'Categoría no encontrada' });
     }
 
+    res.status(204).send();
+  } catch (error) {
     res.status(400).json({ error: error.message });
   }
 }

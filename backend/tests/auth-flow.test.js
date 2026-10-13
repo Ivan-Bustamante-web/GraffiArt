@@ -2,13 +2,14 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const bcrypt = require('bcrypt');
 
-const prisma = require('../src/lib/prisma');
+const { AppDataSource } = require('../src/lib/data-source');
 const { login, register } = require('../src/controllers/auth.controller');
 
 const originalEnv = process.env.NODE_ENV;
-const originalUsuarioFindUnique = prisma.usuario.findUnique;
-const originalUsuarioCreate = prisma.usuario.create;
-const originalTokenCreate = prisma.tokenacceso.create;
+const originalGetRepository = AppDataSource.getRepository;
+const mockRepos = (repos) => {
+  AppDataSource.getRepository = (name) => repos[name];
+};
 
 process.env.NODE_ENV = 'development';
 
@@ -28,14 +29,19 @@ function buildResponse() {
 }
 
 test('login should request verification for a user with unverified email', async () => {
-  prisma.usuario.findUnique = async () => ({
-    id: 'u1',
-    nombre: 'Ana',
-    apellido: 'García',
-    email: 'ana@test.com',
-    passwordHash: await bcrypt.hash('abc12345', 10),
-    emailVerificado: false,
-    rol: 'CLIENTE',
+  const passwordHash = await bcrypt.hash('abc12345', 10);
+  mockRepos({
+    usuario: {
+      findOneBy: async () => ({
+        id: 'u1',
+        nombre: 'Ana',
+        apellido: 'García',
+        email: 'ana@test.com',
+        passwordHash,
+        emailVerificado: false,
+        rol: 'CLIENTE',
+      }),
+    },
   });
 
   const response = buildResponse();
@@ -47,15 +53,17 @@ test('login should request verification for a user with unverified email', async
 });
 
 test('register should return a verification token in development flow', async () => {
-  prisma.usuario.findUnique = async () => null;
-  prisma.usuario.create = async ({ data }) => ({
-    id: 'u2',
-    nombre: data.nombre,
-    apellido: data.apellido,
-    email: data.email,
-    rol: 'CLIENTE',
+  mockRepos({
+    usuario: {
+      findOneBy: async () => null,
+      create: (data) => data,
+      save: async (data) => ({ id: 'u2', rol: 'CLIENTE', ...data }),
+    },
+    tokenacceso: {
+      create: (data) => data,
+      save: async (data) => ({ id: 't1', ...data }),
+    },
   });
-  prisma.tokenacceso.create = async () => ({ id: 't1' });
 
   const response = buildResponse();
   await register({ body: { nombre: 'Luis', apellido: 'Pérez', email: 'luis@test.com', password: 'abc12345', telefono: '1111' } }, response);
@@ -66,8 +74,6 @@ test('register should return a verification token in development flow', async ()
 });
 
 process.on('exit', () => {
-  prisma.usuario.findUnique = originalUsuarioFindUnique;
-  prisma.usuario.create = originalUsuarioCreate;
-  prisma.tokenacceso.create = originalTokenCreate;
+  AppDataSource.getRepository = originalGetRepository;
   if (originalEnv === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = originalEnv;
 });

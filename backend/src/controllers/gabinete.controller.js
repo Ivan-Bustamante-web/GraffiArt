@@ -1,9 +1,9 @@
-const prisma = require('../lib/prisma');
+const { repo } = require('../lib/data-source');
 
 // Obtener todos los gabinetes activos
 async function obtenerGabinetes(req, res) {
     try {
-        const gabinetes = await prisma.gabinete.findMany({
+        const gabinetes = await repo('gabinete').find({
             where: { activo: true }
         });
 
@@ -24,9 +24,7 @@ async function obtenerGabinetes(req, res) {
 async function obtenerGabinetePorId(req, res) {
     try {
         const { id } = req.params;
-        const gabinete = await prisma.gabinete.findUnique({
-            where: { id }
-        });
+        const gabinete = await repo('gabinete').findOneBy({ id });
 
         if (!gabinete || !gabinete.activo) {
             return res.status(404).json({ error: 'Gabinete no encontrado' });

@@ -9,6 +9,7 @@ const carritoRoutes = require('./src/routes/carrito.routes');
 const gabineteRoutes = require('./src/routes/gabinete.routes');
 const categoriaRoutes = require('./src/routes/categoria.routes');
 const productoRoutes = require('./src/routes/producto.routes');
+const { initDataSource } = require('./src/lib/data-source');
 
 const app = express();
 
@@ -29,7 +30,14 @@ app.use('/api/carrito', carritoRoutes);
 app.use('/api/gabinetes', gabineteRoutes);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
+initDataSource()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('No se pudo conectar a la base de datos:', error.message);
+    process.exit(1);
+  });
 

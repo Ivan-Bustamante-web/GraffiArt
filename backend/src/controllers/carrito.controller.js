@@ -1,4 +1,11 @@
-const prisma =require('../lib/prisma');
+const { repo } = require('../lib/data-source');
+
+const RELACIONES_CARRITO = { itemcarrito: { gabinete: true, disenoguardado: true } };
+const ORDEN_ITEMS = { itemcarrito: { createdAt: 'DESC' } };
+
+function buscarCarrito(where) {
+  return repo('carrito').findOne({ where, relations: RELACIONES_CARRITO, order: ORDEN_ITEMS });
+}
 
 async function actualizarCantidadItem(req, res){
   try {
@@ -9,31 +16,18 @@ async function actualizarCantidadItem(req, res){
       return res.status(400).json({ error: 'La cantidad debe ser mayor a 0'});
     }
 
-    const itemExistente = await prisma.itemcarrito.findFirst({
-      where: {
-        id,
-        carrito: { usuarioId: req.usuario.id },
-      },
+    const itemExistente = await repo('itemcarrito').findOneBy({
+      id,
+      carrito: { usuarioId: req.usuario.id },
     });
 
     if (!itemExistente) {
       return res.status(400).json({ error: 'Item no encontrado en el carrito'});
     }
 
-    await prisma.itemcarrito.update({
-      where: { id },
-      data: { cantidad: parseInt(cantidad) },
-    });
+    await repo('itemcarrito').update({ id }, { cantidad: parseInt(cantidad) });
 
-    const carritoActualizado = await prisma.carrito.findUnique({
-      where: { usuarioId: req.usuario.id },
-      include: {
-        itemcarrito: {
-          include: { gabinete: true, disenoguardado: true},
-          orderBy: { createdAt: 'desc'},
-        },
-      },
-    });
+    const carritoActualizado = await buscarCarrito({ usuarioId: req.usuario.id });
 
     res.json(calcularTotalesCarrito(carritoActualizado));
   } catch (error) {
@@ -45,30 +39,18 @@ async function eliminarItem(req, res) {
   try {
     const { id } = req.params;
 
-    const itemExistente = await prisma.itemcarrito.findFirst({
-      where: {
-        id,
-        carrito: { usuarioId: req.usuario.id },
-      },
+    const itemExistente = await repo('itemcarrito').findOneBy({
+      id,
+      carrito: { usuarioId: req.usuario.id },
     });
 
     if (!itemExistente) {
       return res.status(404).json({ error: 'Item no encontrado en el carrito'});
     }
 
-    await prisma.itemcarrito.delete({
-      where: { id },
-    });
+    await repo('itemcarrito').delete({ id });
 
-    const carritoActualizado = await prisma.carrito.findUnique({
-      where: { usuarioId: req.usuario.id },
-      include: {
-        itemcarrito: {
-          include: { gabinete: true, disenoguardado: true},
-          orderBy: { createdAt: 'desc'},
-        },
-      },
-    });
+    const carritoActualizado = await buscarCarrito({ usuarioId: req.usuario.id });
 
     res.json(calcularTotalesCarrito(carritoActualizado));
   } catch (error) {
@@ -99,31 +81,13 @@ function calcularTotalesCarrito(carrito) {
 
 async function obtenerCarrito(req, res) {
     try {
-        let carrito = await prisma.carrito.findUnique({
-            where: { usuarioId: req.usuario.id },
-            include: {
-                itemcarrito: {
-                    include: {
-                        gabinete: true,
-                        disenoguardado: true,
-                    },
-                    orderBy: { createdAt: 'desc' },
-                },
-            },
-        });
+        let carrito = await buscarCarrito({ usuarioId: req.usuario.id });
 
         if (!carrito) {
-            carrito = await prisma.carrito.create({
-                data: { usuarioId: req.usuario.id, updatedAt: new Date() },
-                include: {
-                    itemcarrito: {
-                        include: {
-                            gabinete: true,
-                            disenoguardado: true,
-                        },
-                    },
-                },
-            });
+            carrito = await repo('carrito').save(
+                repo('carrito').create({ usuarioId: req.usuario.id })
+            );
+            carrito.itemcarrito = [];
         }
 
         const carritoConTotales = calcularTotalesCarrito(carrito);
@@ -147,9 +111,7 @@ async function agregarItem(req, res) {
         let diseno = null;
 
         if (gabineteId) {
-          gabinete= await prisma.gabinete.findUnique({
-            where: { id: gabineteId },
-          });
+          gabinete= await repo('gabinete').findOneBy({ id: gabineteId });
 
       if (!gabinete || !gabinete.activo) {
         return res.status(404).json({ error: 'El gabinete seleccionado no está disponible' });
@@ -158,9 +120,7 @@ async function agregarItem(req, res) {
     }
 
     if (disenoGuardadoId) {
-      diseno = await prisma.disenoguardado.findFirst({
-        where: { id: disenoGuardadoId, usuarioId: req.usuario.id },
-      });
+      diseno = await repo('disenoguardado').findOneBy({ id: disenoGuardadoId, usuarioId: req.usuario.id });
 
       if (!diseno) {
         return res.status(404).json({ error: 'El diseño guardado no fue encontrado' });
@@ -170,57 +130,41 @@ async function agregarItem(req, res) {
     }
 
     //Verifica si el usuario tiene un carrito activo
-    let carrito = await prisma.carrito.findUnique({
-      where: { usuarioId: req.usuario.id },
-    });
+    let carrito = await repo('carrito').findOneBy({ usuarioId: req.usuario.id });
 
     if (!carrito) {
-      carrito = await prisma.carrito.create({
-        data: { usuarioId: req.usuario.id, updatedAt: new Date() },
-      });
+      carrito = await repo('carrito').save(
+        repo('carrito').create({ usuarioId: req.usuario.id })
+      );
     }
 
     //Verifica si el item ya existe en el carrito para sumar la cantidad o crearlo
-    const itemExistente = await prisma.itemcarrito.findFirst({
-      where: {
-        carritoId: carrito.id,
-        ...(gabineteId ? { gabineteId } : { disenoGuardadoId }),
-      },
+    const itemExistente = await repo('itemcarrito').findOneBy({
+      carritoId: carrito.id,
+      ...(gabineteId ? { gabineteId } : { disenoGuardadoId }),
     });
 
     const cantidadAEnviar = parseInt(cantidad) > 0 ? parseInt(cantidad) : 1;
 
     if (itemExistente) {
-      await prisma.itemcarrito.update({
-        where: { id: itemExistente.id },
-        data: { cantidad: itemExistente.cantidad + cantidadAEnviar },
-      });
+      await repo('itemcarrito').update(
+        { id: itemExistente.id },
+        { cantidad: itemExistente.cantidad + cantidadAEnviar }
+      );
     } else {
-      await prisma.itemcarrito.create({
-        data: {
+      await repo('itemcarrito').save(
+        repo('itemcarrito').create({
           carritoId: carrito.id,
           gabineteId: gabineteId || null,
           disenoGuardadoId: disenoGuardadoId || null,
           cantidad: cantidadAEnviar,
           precioUnitario,
-          updatedAt: new Date(),
-        },
-      });
+        })
+      );
     }
 
     // Devolver el carrito completo y actualizado con sus subtotales y totales calculados
-    const carritoActualizado = await prisma.carrito.findUnique({
-      where: { id: carrito.id },
-      include: {
-        itemcarrito: {
-          include: {
-            gabinete: true,
-            disenoguardado: true,
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-    });
+    const carritoActualizado = await buscarCarrito({ id: carrito.id });
 
     const resultadoFinal = calcularTotalesCarrito(carritoActualizado);
     res.status(201).json(resultadoFinal);
