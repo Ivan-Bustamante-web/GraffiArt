@@ -19,7 +19,7 @@ const FEEDBACK_STYLES = {
   },
 };
 
-export default function Feedback({ type, children }) {
+export default function Feedback({ type, children }) { // ALERT
   const feedback = FEEDBACK_STYLES[type];
 
   if (!feedback) {

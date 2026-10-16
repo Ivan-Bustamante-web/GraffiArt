@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { PRODUCTCARD } from "../types/PRODUCTCARD";
 import Button from "./Button";
 
 export default function ProductCard({
@@ -16,7 +17,7 @@ export default function ProductCard({
         type="button"
         className="block w-full cursor-zoom-in bg-neutral-100"
         onClick={() => setIsImageExpanded(true)}
-        aria-label={`Ampliar imagen de ${name}`}
+        aria-label={PRODUCTCARD.expandImage(name)}
       >
         <img
           src={image}
@@ -36,14 +37,14 @@ export default function ProductCard({
             to={detailsTo}
             className="rounded-lg border border-neutral-300 px-3 py-2 text-center text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
           >
-            Ver detalles
+            {PRODUCTCARD.details}
           </Link>
           <Button
             variant="verify"
             disabled={!onAddToCart}
             onClick={() => onAddToCart(product)}
           >
-            Agregar al carrito
+            {PRODUCTCARD.addToCart}
           </Button>
         </div>
       </div>
@@ -52,7 +53,7 @@ export default function ProductCard({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`Imagen de ${name}`}
+          aria-label={PRODUCTCARD.image(name)}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
         >
           <button
@@ -60,7 +61,7 @@ export default function ProductCard({
             className="absolute right-4 top-4 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-neutral-900"
             onClick={() => setIsImageExpanded(false)}
           >
-            Cerrar
+            {PRODUCTCARD.close}
           </button>
           <img
             src={image}

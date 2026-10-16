@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import Input from "./Input";
+import { Input } from "./TextField";
+import { IMAGEUPLOAD } from "../types/IMAGEUPLOAD";
 
 export default function ImageUpload({
-  label = "Seleccionar imagen",
+  label = IMAGEUPLOAD.labelselection,
   onImageChange,
 }) {
   const [previewUrl, setPreviewUrl] = useState("");
@@ -46,11 +47,11 @@ export default function ImageUpload({
         <div className="space-y-1">
           <img
             src={previewUrl}
-            alt="Vista previa de la imagen seleccionada"
+            alt={IMAGEUPLOAD.altview}
             className="max-h-64 rounded-lg border border-neutral-200 object-contain"
           />
           <p className="text-xs text-neutral-500">
-            Vista previa local; la imagen todavía no está guardada.
+            {IMAGEUPLOAD.localviewnote}
           </p>
         </div>
       )}
