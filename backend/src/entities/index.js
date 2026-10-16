@@ -1,8 +1,8 @@
 const { EntitySchema } = require('typeorm');
 
 const id = { type: 'varchar', length: 191, primary: true, generated: 'uuid' };
-const createdAt = { type: 'datetime', precision: 3, createDate: true };
-const updatedAt = { type: 'datetime', precision: 3, updateDate: true };
+const createdAt = { type: 'datetime', precision: 3, createDate: true, default: () => 'CURRENT_TIMESTAMP(3)' };
+const updatedAt = { type: 'datetime', precision: 3, updateDate: true, default: () => 'CURRENT_TIMESTAMP(3)', onUpdate: 'CURRENT_TIMESTAMP(3)' };
 const dinero = { type: 'decimal', precision: 10, scale: 2 };
 
 const Usuario = new EntitySchema({
@@ -15,7 +15,7 @@ const Usuario = new EntitySchema({
     email: { type: 'varchar', length: 191, unique: true },
     passwordHash: { type: 'varchar', length: 191 },
     telefono: { type: 'varchar', length: 191, nullable: true },
-    fechaRegistro: { type: 'datetime', precision: 3, createDate: true },
+    fechaRegistro: { type: 'datetime', precision: 3, createDate: true, default: () => 'CURRENT_TIMESTAMP(3)' },
     emailVerificado: { type: 'boolean', default: false },
     rol: { type: 'enum', enum: ['CLIENTE', 'ADMIN'], default: 'CLIENTE' },
   },
@@ -36,7 +36,7 @@ const TokenAcceso = new EntitySchema({
     tipo: { type: 'enum', enum: ['VERIFICACION_EMAIL', 'RECUPERACION_PASSWORD'] },
     expiraEn: { type: 'datetime', precision: 3 },
     usado: { type: 'boolean', default: false },
-    creadoEn: { type: 'datetime', precision: 3, createDate: true },
+    creadoEn: { type: 'datetime', precision: 3, createDate: true, default: () => 'CURRENT_TIMESTAMP(3)' },
     usuarioId: { type: 'varchar', length: 191 },
   },
   relations: {
