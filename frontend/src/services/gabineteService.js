@@ -1,9 +1,11 @@
-const API_URL = 'http://localhost:3000/api/gabinetes';
+import apiClient from "../api/axios";
 
-export async function obtenerGabinetes() {
-    const response = await fetch(API_URL);
-    if (!response.ok) {
-        throw new Error('Error al obtener los gabinetes');
-    }
-    return response.json();
-}
+export const listarGabinetes = async () => {
+  const { data } = await apiClient.get("/gabinetes");
+  return data;
+};
+
+export const obtenerGabinete = async (id) => {
+  const { data } = await apiClient.get(`/gabinetes/${id}`);
+  return data;
+};

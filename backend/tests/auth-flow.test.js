@@ -28,7 +28,7 @@ function buildResponse() {
   };
 }
 
-test('login should request verification for a user with unverified email', async () => {
+test('login should return a token for a registered user', async () => {
   const passwordHash = await bcrypt.hash('abc12345', 10);
   mockRepos({
     usuario: {
@@ -38,7 +38,6 @@ test('login should request verification for a user with unverified email', async
         apellido: 'García',
         email: 'ana@test.com',
         passwordHash,
-        emailVerificado: false,
         rol: 'CLIENTE',
       }),
     },
@@ -47,21 +46,21 @@ test('login should request verification for a user with unverified email', async
   const response = buildResponse();
   await login({ body: { email: 'ana@test.com', password: 'abc12345' } }, response);
 
-  assert.equal(response.statusCode, 403);
-  assert.equal(response.body.needsVerification, true);
-  assert.equal(response.body.email, 'ana@test.com');
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.body.token);
+  assert.equal(response.body.usuario.email, 'ana@test.com');
 });
 
-test('register should return a verification token in development flow', async () => {
+test('register should create an active user without email verification', async () => {
+  let savedUser;
   mockRepos({
     usuario: {
       findOneBy: async () => null,
       create: (data) => data,
-      save: async (data) => ({ id: 'u2', rol: 'CLIENTE', ...data }),
-    },
-    tokenacceso: {
-      create: (data) => data,
-      save: async (data) => ({ id: 't1', ...data }),
+      save: async (data) => {
+        savedUser = { id: 'u2', rol: 'CLIENTE', ...data };
+        return savedUser;
+      },
     },
   });
 
@@ -69,8 +68,9 @@ test('register should return a verification token in development flow', async ()
   await register({ body: { nombre: 'Luis', apellido: 'Pérez', email: 'luis@test.com', password: 'abc12345', telefono: '1111' } }, response);
 
   assert.equal(response.statusCode, 201);
-  assert.ok(response.body.token);
-  assert.match(response.body.verificationUrl, /\/verificar-email\?token=/);
+  assert.equal(savedUser.emailVerificado, true);
+  assert.equal(response.body.token, undefined);
+  assert.equal(response.body.verificationUrl, undefined);
 });
 
 process.on('exit', () => {

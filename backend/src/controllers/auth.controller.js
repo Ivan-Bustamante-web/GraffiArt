@@ -49,7 +49,7 @@ async function sendEmail(to, subject, html) {
         console.log(`[email desarrollo fallback] ${to}: ${subject}`);
         return;
       }
-      throw new Error('No se pudo enviar el correo de verificación');
+      throw new Error('No se pudo enviar el correo');
     }
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') {
@@ -70,13 +70,6 @@ async function login(req, res) {
     const usuario = await repo('usuario').findOneBy({ email: normalizedEmail });
     if (!usuario || !(await bcrypt.compare(password, usuario.passwordHash))) {
       return res.status(401).json({ error: 'Credenciales inválidas. Verificá tu email y contraseña.' });
-    }
-    if (!usuario.emailVerificado) {
-      return res.status(403).json({
-        error: 'Tu email aún no está verificado.',
-        needsVerification: true,
-        email: usuario.email,
-      });
     }
     const token = jwt.sign(
       { id: usuario.id, email: usuario.email, rol: usuario.rol },
@@ -120,100 +113,13 @@ async function register(req, res) {
         email: normalizedEmail,
         passwordHash: await bcrypt.hash(password, 10),
         telefono: telefono?.trim() || null,
+        emailVerificado: true,
       })
     );
 
-    const token = await createToken(usuario.id, 'VERIFICACION_EMAIL', 60);
-    const verificationUrl = `${frontendUrl}/verificar-email?token=${token}`;
-    await sendEmail(
-      usuario.email,
-      'Confirmá tu email en GraffiArt',
-      `<p>Hola ${usuario.nombre},</p><p>Gracias por registrarte en GraffiArt.</p><p><a href="${verificationUrl}">Confirmar mi email</a></p>`
-    );
-
-    res.status(201).json({
-      message: 'Registro exitoso. Revisá tu email para activar la cuenta.',
-      ...(process.env.NODE_ENV !== 'production' && { verificationUrl, token }),
-    });
+    res.status(201).json({ message: 'Registro exitoso. Ya podés iniciar sesión.' });
   } catch (error) {
     res.status(500).json({ error: error.message || 'Error al procesar el registro' });
-  }
-}
-
-async function resendVerification(req, res) {
-  try {
-    const { email } = req.body || {};
-    if (!email?.trim()) return res.status(400).json({ error: 'Debés ingresar un email' });
-
-    const normalizedEmail = email.trim().toLowerCase();
-    const usuario = await repo('usuario').findOneBy({ email: normalizedEmail });
-
-    if (!usuario) {
-      return res.json({ message: 'Si el correo está registrado, enviaremos un enlace de activación.' });
-    }
-
-    if (usuario.emailVerificado) {
-      return res.status(400).json({ error: 'Este correo ya se encuentra verificado. Podés iniciar sesión.' });
-    }
-
-    await repo('tokenacceso').update(
-      { usuarioId: usuario.id, tipo: 'VERIFICACION_EMAIL', usado: false },
-      { usado: true }
-    );
-
-    const token = await createToken(usuario.id, 'VERIFICACION_EMAIL', 60);
-    const verificationUrl = `${frontendUrl}/verificar-email?token=${token}`;
-    await sendEmail(
-      usuario.email,
-      'Confirmá tu email en GraffiArt',
-      `<p>Hola ${usuario.nombre},</p><p>Hacé clic en el siguiente enlace para activar tu cuenta:</p><p><a href="${verificationUrl}">Activar mi cuenta</a></p>`
-    );
-
-    res.json({
-      message: 'Enviamos un nuevo enlace de activación a tu correo.',
-      ...(process.env.NODE_ENV !== 'production' && { verificationUrl, token }),
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message || 'Error al reenviar verificación' });
-  }
-}
-
-async function verifyEmail(req, res) {
-  try {
-    const rawToken = req.query.token || req.body?.token;
-    if (!rawToken) {
-      return res.status(400).json({ error: 'El token de verificación es obligatorio' });
-    }
-    const tokenClean = String(rawToken).trim().toLowerCase();
-    const accessToken = await repo('tokenacceso').findOne({
-      where: { tokenHash: hashToken(tokenClean), tipo: 'VERIFICACION_EMAIL' },
-      relations: { usuario: true },
-    });
-
-    if (!accessToken) {
-      return res.status(400).json({ error: 'El enlace de verificación es inválido' });
-    }
-
-    if (accessToken.usado) {
-      return res.json({ message: 'Tu cuenta ya está verificada. Podés iniciar sesión.' });
-    }
-
-    if (accessToken.expiraEn < new Date()) {
-      return res.status(400).json({
-        error: 'El enlace de verificación ha expirado. Solicitá uno nuevo.',
-        expired: true,
-        email: accessToken.usuario?.email,
-      });
-    }
-
-    await AppDataSource.transaction(async (manager) => {
-      await manager.update('usuario', { id: accessToken.usuarioId }, { emailVerificado: true });
-      await manager.update('tokenacceso', { id: accessToken.id }, { usado: true });
-    });
-
-    res.json({ message: '¡Email verificado con éxito! Ya podés iniciar sesión.' });
-  } catch (error) {
-    res.status(500).json({ error: error.message || 'Error al verificar email' });
   }
 }
 
@@ -286,7 +192,7 @@ async function resetPassword(req, res) {
       await manager.update(
         'usuario',
         { id: accessToken.usuarioId },
-        { passwordHash, emailVerificado: true } // Proving email ownership activates the account
+        { passwordHash }
       );
       await manager.update('tokenacceso', { id: accessToken.id }, { usado: true });
     });
@@ -300,8 +206,6 @@ async function resetPassword(req, res) {
 module.exports = {
   login,
   register,
-  resendVerification,
-  verifyEmail,
   forgotPassword,
   resetPassword,
 };

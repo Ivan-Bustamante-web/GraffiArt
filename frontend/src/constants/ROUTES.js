@@ -1,0 +1,17 @@
+export const ROUTES = {
+  home: "/",
+  configurator: "/configurador",
+  products: "/productos",
+  productDetail: (id) => `/productos/${id}`,
+  productDetailPattern: "/productos/:id",
+  cart: "/carrito",
+  login: "/login",
+  register: "/register",
+  forgotPassword: "/forgot-password",
+  resetPassword: "/restablecer-password",
+  profile: "/perfil",
+  admin: "/admin",
+  adminCategories: "/admin/categorias",
+  adminProducts: "/admin/productos",
+  inventory: "/inventario",
+};
