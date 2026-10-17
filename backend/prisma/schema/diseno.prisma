@@ -1,0 +1,19 @@
+// MODELO DE DATOS
+// Los archivos .prisma describen las tablas de la base de datos: sus campos, tipos y relaciones.
+// Está dividido por tema para que sea fácil de encontrar y mantener.
+// Este archivo: Tabla de los diseños guardados por cada usuario.
+
+model DisenoGuardado {
+  id            String   @id @default(uuid())
+  nombre        String   @db.VarChar(120)
+  descripcion   String?  @db.Text
+  configuracion Json
+  usuarioId     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  usuario Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  items   ItemCarrito[]
+
+  @@index([usuarioId])
+}

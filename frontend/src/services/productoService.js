@@ -1,35 +1,32 @@
-import axios from 'axios';
+import apiClient from "../api/axios";
 
-const API_URL = `${
-  import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
-}/productos`;
-
-const getConfig = () => ({
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem('graffiart_token') || ''}`,
-  },
-});
-
-export const getProductos = async () => {
-  const response = await axios.get(API_URL, getConfig());
-  return response.data;
+export const listarProductos = async () => {
+  const { data } = await apiClient.get("/productos");
+  return data;
 };
 
-export const getProducto = async (id) => {
-  const response = await axios.get(`${API_URL}/${id}`, getConfig());
-  return response.data;
+export const obtenerProducto = async (id) => {
+  const { data } = await apiClient.get(`/productos/${id}`);
+  return data;
 };
 
-export const crearProducto = async (producto) => {
-  const response = await axios.post(API_URL, producto, getConfig());
-  return response.data;
+export const crearProducto = async (payload) => {
+  const { data } = await apiClient.post("/productos", payload);
+  return data;
 };
 
-export const editarProducto = async (id, producto) => {
-  const response = await axios.put(`${API_URL}/${id}`, producto, getConfig());
-  return response.data;
+export const editarProducto = async (id, payload) => {
+  const { data } = await apiClient.put(`/productos/${id}`, payload);
+  return data;
 };
 
 export const eliminarProducto = async (id) => {
-  await axios.delete(`${API_URL}/${id}`, getConfig());
+  await apiClient.delete(`/productos/${id}`);
+};
+
+export default {
+  listar: listarProductos,
+  crear: crearProducto,
+  editar: editarProducto,
+  eliminar: eliminarProducto,
 };

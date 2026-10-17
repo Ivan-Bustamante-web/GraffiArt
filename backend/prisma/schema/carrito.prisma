@@ -1,0 +1,33 @@
+// MODELO DE DATOS
+// Los archivos .prisma describen las tablas de la base de datos: sus campos, tipos y relaciones.
+// Está dividido por tema para que sea fácil de encontrar y mantener.
+// Este archivo: Tablas del carrito de compras y sus items.
+
+model Carrito {
+  id        String   @id @default(uuid())
+  usuarioId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  usuario Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  items   ItemCarrito[]
+}
+
+model ItemCarrito {
+  id               String   @id @default(uuid())
+  carritoId        String
+  gabineteId       String?
+  disenoGuardadoId String?
+  cantidad         Int      @default(1)
+  precioUnitario   Decimal  @db.Decimal(10, 2)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  carrito        Carrito         @relation(fields: [carritoId], references: [id], onDelete: Cascade)
+  gabinete       Gabinete?       @relation(fields: [gabineteId], references: [id])
+  disenoGuardado DisenoGuardado? @relation(fields: [disenoGuardadoId], references: [id])
+
+  @@index([carritoId])
+  @@index([gabineteId])
+  @@index([disenoGuardadoId])
+}

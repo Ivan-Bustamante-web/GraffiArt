@@ -1,16 +1,32 @@
-# React + Vite
+# GraffiArt - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite. Estilos con Tailwind, rutas con React Router, estado con Zustand, peticiones con Axios y validaciones con Yup.
 
-Currently, two official plugins are available:
+## Instalación
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
 
-## React Compiler
+La variable `VITE_API_URL` apunta al backend (por defecto `http://localhost:3000/api`).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Scripts
 
-## Expanding the ESLint configuration
+- `npm run dev`: servidor de desarrollo
+- `npm run build`: build de producción
+- `npm run lint`: revisión de código
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Estructura (`src/`)
+
+- `api/`: cliente de Axios (agrega el token a cada request)
+- `components/`: una carpeta por componente
+- `constants/`: rutas, textos, formularios y datos estáticos
+- `hooks/`: custom hooks (carga de datos, CRUD, perfil, diseños, configurador)
+- `pages/`: una carpeta por página
+- `schemas/`: validaciones con Yup
+- `services/`: llamadas a la API
+- `store/`: estado global con Zustand (sesión y carrito)
+- `utils/`: funciones auxiliares
+- `router.jsx`: rutas de la aplicación

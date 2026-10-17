@@ -1,49 +1,17 @@
-const prisma = require('../lib/prisma');
+// CONTROLLER
+// El controller recibe el pedido del usuario, se lo pasa al service y devuelve la respuesta (con su código: 200, 201, 204...).
+// Debe tener: funciones cortas que leen los datos que llegaron (body, params, usuario logueado), llaman a un service y responden.
+// No debe tener: reglas del negocio ni consultas a la base de datos.
+// Este archivo: recibe y responde los pedidos del perfil del usuario.
 
-async function getPerfil(req, res) {
-  try {
-    const usuario = await prisma.usuario.findUnique({
-      where: { id: req.usuario.id },
-      select: {
-        id: true,
-        nombre: true,
-        apellido: true,
-        email: true,
-        telefono: true,
-        rol: true,
-        fechaRegistro: true,
-        emailVerificado: true,
-      },
-    });
-    if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
-    res.json(usuario);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-}
+import * as usuarioService from '../services/usuario.service.js';
 
-async function updatePerfil(req, res) {
-  try {
-    const { nombre, apellido, telefono } = req.body;
-    if (!nombre || !apellido) {
-      return res.status(400).json({ error: 'Nombre y apellido son obligatorios' });
-    }
-    const usuario = await prisma.usuario.update({
-      where: { id: req.usuario.id },
-      data: { nombre, apellido, telefono },
-      select: {
-        id: true,
-        nombre: true,
-        apellido: true,
-        email: true,
-        telefono: true,
-        rol: true,
-      },
-    });
-    res.json(usuario);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-}
+const getPerfil = async (req, res) => {
+  res.json(await usuarioService.obtenerPerfil(req.usuario.id));
+};
 
-module.exports = { getPerfil, updatePerfil };
+const updatePerfil = async (req, res) => {
+  res.json(await usuarioService.actualizarPerfil(req.usuario.id, req.body));
+};
+
+export { getPerfil, updatePerfil };

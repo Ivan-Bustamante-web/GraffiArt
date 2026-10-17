@@ -1,46 +1,24 @@
-const { randomUUID } = require('crypto');
+// SCRIPT
+// Crea (o actualiza) el usuario administrador con ADMIN_EMAIL y ADMIN_PASSWORD del .env.
+// Se ejecuta con: npm run crear-admin
 
-require('dotenv').config();
-const bcrypt = require('bcrypt');
-const prisma = require('../src/lib/prisma');
+import env from '../src/config/env.js';
+import prisma from '../src/lib/prisma.js';
+import { asegurarAdmin } from '../src/services/usuario.service.js';
 
-async function crearAdmin() {
-  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  const password = process.env.ADMIN_PASSWORD;
-
-  if (!email || !password) {
+const main = async () => {
+  if (!env.ADMIN_EMAIL || !env.ADMIN_PASSWORD) {
     throw new Error('Configurá ADMIN_EMAIL y ADMIN_PASSWORD antes de ejecutar este script.');
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  const admin = await prisma.usuario.upsert({
-    where: { email },
-    update: {
-      rol: 'ADMIN',
-      emailVerificado: true,
-      passwordHash,
-    },
-    create: {
-      id: randomUUID(),
-      nombre: 'Administrador',
-      apellido: 'GraffiArt',
-      email,
-      passwordHash,
-      rol: 'ADMIN',
-      emailVerificado: true,
-    },
-  });
-
+  const admin = await asegurarAdmin({ email: env.ADMIN_EMAIL, password: env.ADMIN_PASSWORD });
   console.log(`Administrador listo: ${admin.email}`);
   console.log(`Rol: ${admin.rol}`);
-}
+};
 
-crearAdmin()
+main()
   .catch((error) => {
     console.error(error.message || error);
     process.exitCode = 1;
   })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .finally(() => prisma.$disconnect());
