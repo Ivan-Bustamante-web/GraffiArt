@@ -1,23 +1,4 @@
-const FEEDBACK_STYLES = {
-  success: {
-    role: "status",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    icon: "✓",
-    iconClassName: "text-emerald-600",
-  },
-  error: {
-    role: "alert",
-    className: "border-red-200 bg-red-50 text-red-800",
-    icon: "⚠",
-    iconClassName: "text-red-600",
-  },
-  warning: {
-    role: "status",
-    className: "border-amber-300 bg-amber-50 text-amber-900 shadow-sm",
-    icon: "⚡",
-    iconClassName: "text-amber-800",
-  },
-};
+import { FEEDBACK_STYLES } from "../../constants/STYLES";
 
 // Aviso de color para informar al usuario: éxito, error o advertencia.
 // Props:

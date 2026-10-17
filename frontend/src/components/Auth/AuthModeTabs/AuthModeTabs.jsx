@@ -1,22 +1,14 @@
 import { Link } from "react-router";
-import { LOGIN } from "../../../constants/LOGIN";
-import { ROUTES } from "../../../constants/ROUTES";
+import { AUTH_TABS } from "../../../constants/LOGIN";
 
 // Pestañas para cambiar entre "Ingresar" y "Registrarse".
 // Props:
 //   mode: pestaña activa: login o register
 //   onModeChange: se ejecuta al cambiar de pestaña (para limpiar el formulario)
 const AuthModeTabs = ({ mode, onModeChange }) => {
-  if (mode !== "login" && mode !== "register") return null;
-
-  const tabs = [
-    { id: "login", to: ROUTES.login, label: LOGIN.title },
-    { id: "register", to: ROUTES.register, label: LOGIN.register.tab },
-  ];
-
   return (
     <div className="mt-6 flex rounded-xl bg-neutral-100 p-1">
-      {tabs.map((tab) => (
+      {AUTH_TABS.map((tab) => (
         <Link
           key={tab.id}
           to={tab.to}

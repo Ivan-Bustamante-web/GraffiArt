@@ -1,0 +1,24 @@
+// MODELO DE DATOS
+// Los archivos .prisma describen las tablas de la base de datos: sus campos, tipos y relaciones.
+// Está dividido por tema para que sea fácil de encontrar y mantener.
+// Este archivo: Tabla de usuarios y sus roles (cliente o administrador).
+
+enum Rol {
+  CLIENTE
+  ADMIN
+}
+
+model Usuario {
+  id            String   @id @default(uuid())
+  nombre        String   @db.VarChar(100)
+  apellido      String   @db.VarChar(100)
+  email         String   @unique @db.VarChar(191)
+  passwordHash  String
+  telefono      String?  @db.VarChar(50)
+  rol           Rol      @default(CLIENTE)
+  fechaRegistro DateTime @default(now())
+
+  disenos     DisenoGuardado[]
+  carrito     Carrito?
+  movimientos MovimientoInventario[]
+}

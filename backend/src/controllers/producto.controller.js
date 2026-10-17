@@ -1,194 +1,33 @@
-const { repo } = require('../lib/data-source');
+// CONTROLLER
+// El controller recibe el pedido del usuario, se lo pasa al service y devuelve la respuesta (con su código: 200, 201, 204...).
+// Debe tener: funciones cortas que leen los datos que llegaron (body, params, usuario logueado), llaman a un service y responden.
+// No debe tener: reglas del negocio ni consultas a la base de datos.
+// Este archivo: recibe y responde los pedidos de los productos (gabinetes) que gestiona el administrador.
 
-async function listarProductos(req, res) {
-  try {
-    const productos = await repo('gabinete').find({
-      relations: { categoria: true },
-      order: { createdAt: 'DESC' },
-    });
+import * as productoService from '../services/producto.service.js';
 
-    res.json(productos);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-}
+const listarProductos = async (req, res) => {
+  res.json(await productoService.listar());
+};
 
-async function obtenerProducto(req, res) {
-  try {
-    const producto = await repo('gabinete').findOne({
-      where: { id: req.params.id },
-      relations: { categoria: true },
-    });
+const obtenerProducto = async (req, res) => {
+  res.json(await productoService.obtener(req.params.id));
+};
 
-    if (!producto) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
-    }
+const crearProducto = async (req, res) => {
+  res.status(201).json(await productoService.crear(req.body));
+};
 
-    res.json(producto);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-}
+const editarProducto = async (req, res) => {
+  res.json(await productoService.editar(req.params.id, req.body));
+};
 
-function validarDatosProducto(body) {
-  const {
-    nombre,
-    marca,
-    costoUnitario,
-    stockActual,
-    stockMinimo,
-    tamano,
-    formato,
-    materialChasis,
-    panel,
-  } = body;
+const eliminarProducto = async (req, res) => {
+  await productoService.eliminar(req.params.id);
+  res.status(204).send();
+};
 
-  if (!nombre?.trim() || !marca?.trim()) {
-    return 'Nombre y marca son obligatorios';
-  }
-
-  if (costoUnitario === undefined || Number.isNaN(Number(costoUnitario)) || Number(costoUnitario) < 0) {
-    return 'El costo unitario debe ser un número mayor o igual a 0';
-  }
-
-  if (stockActual === undefined || Number.isNaN(Number(stockActual)) || Number(stockActual) < 0) {
-    return 'El stock actual debe ser un número mayor o igual a 0';
-  }
-
-  if (stockMinimo === undefined || Number.isNaN(Number(stockMinimo)) || Number(stockMinimo) < 0) {
-    return 'El stock mínimo debe ser un número mayor o igual a 0';
-  }
-
-  if (!tamano || !formato || !materialChasis || !panel) {
-    return 'Las características del gabinete son obligatorias';
-  }
-
-  return null;
-}
-
-async function crearProducto(req, res) {
-  try {
-    const errorValidacion = validarDatosProducto(req.body || {});
-    if (errorValidacion) {
-      return res.status(400).json({ error: errorValidacion });
-    }
-
-    const {
-      nombre,
-      marca,
-      costoUnitario,
-      stockActual,
-      stockMinimo,
-      tamano,
-      formato,
-      materialChasis,
-      panel,
-      categoriaId,
-    } = req.body;
-
-    if (categoriaId) {
-      const categoria = await repo('CategoriaProducto').findOneBy({ id: categoriaId });
-      if (!categoria) {
-        return res.status(400).json({ error: 'La categoría seleccionada no existe' });
-      }
-    }
-
-    const creado = await repo('gabinete').save(
-      repo('gabinete').create({
-        nombre: nombre.trim(),
-        marca: marca.trim(),
-        costoUnitario: Number(costoUnitario),
-        stockActual: Number(stockActual),
-        stockMinimo: Number(stockMinimo),
-        tamano,
-        formato,
-        materialChasis,
-        panel,
-        categoriaId: categoriaId || null,
-      })
-    );
-    const producto = await repo('gabinete').findOne({
-      where: { id: creado.id },
-      relations: { categoria: true },
-    });
-
-    res.status(201).json(producto);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-}
-
-async function editarProducto(req, res) {
-  try {
-    const body = req.body || {};
-    const data = {};
-
-    if (body.nombre !== undefined) data.nombre = body.nombre.trim();
-    if (body.marca !== undefined) data.marca = body.marca.trim();
-    if (body.costoUnitario !== undefined) data.costoUnitario = Number(body.costoUnitario);
-    if (body.stockActual !== undefined) data.stockActual = Number(body.stockActual);
-    if (body.stockMinimo !== undefined) data.stockMinimo = Number(body.stockMinimo);
-    if (body.tamano !== undefined) data.tamano = body.tamano;
-    if (body.formato !== undefined) data.formato = body.formato;
-    if (body.materialChasis !== undefined) data.materialChasis = body.materialChasis;
-    if (body.panel !== undefined) data.panel = body.panel;
-    if (body.categoriaId !== undefined) data.categoriaId = body.categoriaId || null;
-    if (body.activo !== undefined) data.activo = Boolean(body.activo);
-
-    if (data.nombre !== undefined && !data.nombre) {
-      return res.status(400).json({ error: 'El nombre es obligatorio' });
-    }
-    if (data.marca !== undefined && !data.marca) {
-      return res.status(400).json({ error: 'La marca es obligatoria' });
-    }
-    if (data.costoUnitario !== undefined && (Number.isNaN(data.costoUnitario) || data.costoUnitario < 0)) {
-      return res.status(400).json({ error: 'El costo unitario no es válido' });
-    }
-    if (data.stockActual !== undefined && (Number.isNaN(data.stockActual) || data.stockActual < 0)) {
-      return res.status(400).json({ error: 'El stock actual no es válido' });
-    }
-    if (data.stockMinimo !== undefined && (Number.isNaN(data.stockMinimo) || data.stockMinimo < 0)) {
-      return res.status(400).json({ error: 'El stock mínimo no es válido' });
-    }
-
-    if (data.categoriaId) {
-      const categoria = await repo('CategoriaProducto').findOneBy({ id: data.categoriaId });
-      if (!categoria) {
-        return res.status(400).json({ error: 'La categoría seleccionada no existe' });
-      }
-    }
-
-    if (!(await repo('gabinete').existsBy({ id: req.params.id }))) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
-    }
-    if (Object.keys(data).length) {
-      await repo('gabinete').update({ id: req.params.id }, data);
-    }
-    const producto = await repo('gabinete').findOne({
-      where: { id: req.params.id },
-      relations: { categoria: true },
-    });
-
-    res.json(producto);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-}
-
-async function eliminarProducto(req, res) {
-  try {
-    const { affected } = await repo('gabinete').delete({ id: req.params.id });
-    if (!affected) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
-    }
-
-    res.status(204).send();
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-}
-
-module.exports = {
+export {
   listarProductos,
   obtenerProducto,
   crearProducto,

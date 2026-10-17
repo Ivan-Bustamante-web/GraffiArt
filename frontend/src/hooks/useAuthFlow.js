@@ -1,24 +1,13 @@
 import { useState } from "react";
 import { submitAuthAction } from "../utils/authActions";
-import { LOGIN } from "../constants/LOGIN";
-
-const INITIAL_FORM = {
-  nombre: "",
-  apellido: "",
-  email: "",
-  password: "",
-  confirmPassword: "",
-  telefono: "",
-  resetCode: "",
-};
+import { AUTH_INITIAL_FORM, LOGIN } from "../constants/LOGIN";
 
 const useAuthFlow = ({
   mode,
-  token = "",
   service,
   onLoginSuccess,
 }) => {
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [form, setForm] = useState(AUTH_INITIAL_FORM);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,7 +19,7 @@ const useAuthFlow = ({
   };
 
   const resetForm = () => {
-    setForm(INITIAL_FORM);
+    setForm(AUTH_INITIAL_FORM);
     setMessage("");
     setError("");
     setActionComplete(false);
@@ -43,7 +32,7 @@ const useAuthFlow = ({
     setLoading(true);
 
     try {
-      const result = await submitAuthAction({ mode, form, token, service });
+      const result = await submitAuthAction({ mode, form, service });
 
       if (result.error) {
         setError(result.error);
@@ -67,11 +56,6 @@ const useAuthFlow = ({
     }
   };
 
-  const showFormAgain = () => {
-    setMessage("");
-    setActionComplete(false);
-  };
-
   return {
     form,
     message,
@@ -81,7 +65,6 @@ const useAuthFlow = ({
     onFieldChange,
     resetForm,
     onSubmit,
-    showFormAgain,
   };
 };
 

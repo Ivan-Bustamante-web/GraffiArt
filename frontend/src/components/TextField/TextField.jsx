@@ -1,6 +1,4 @@
-const LABEL_CLASS = "block text-left text-xs font-semibold text-neutral-700";
-const INPUT_CLASS =
-  "w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900";
+import { FIELD_INPUT_CLASS, FIELD_LABEL_CLASS } from "../../constants/STYLES";
 
 // Campo de texto simple (solo el cuadro, sin etiqueta).
 // Props:
@@ -12,7 +10,7 @@ export const Input = ({
   ...inputProps
 }) => {
   const inputClassName =
-    className ?? `${INPUT_CLASS}${hasAction ? " pr-10" : ""}`;
+    className ?? `${FIELD_INPUT_CLASS}${hasAction ? " pr-10" : ""}`;
 
   return <input className={inputClassName} {...inputProps} />;
 };
@@ -34,7 +32,7 @@ const Control = ({
 }) => {
   if (type === "select") {
     return (
-      <select className={`${INPUT_CLASS} bg-white`} {...props}>
+      <select className={`${FIELD_INPUT_CLASS} bg-white`} {...props}>
         {placeholder !== undefined && <option value="">{placeholder}</option>}
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -48,7 +46,7 @@ const Control = ({
   if (type === "textarea") {
     return (
       <textarea
-        className={INPUT_CLASS}
+        className={FIELD_INPUT_CLASS}
         rows={3}
         placeholder={placeholder}
         {...props}
@@ -79,7 +77,7 @@ const Control = ({
 const TextField = ({
   id,
   label,
-  labelClassName = LABEL_CLASS,
+  labelClassName = FIELD_LABEL_CLASS,
   labelAction,
   inputAction,
   type = "text",

@@ -2,7 +2,10 @@ import {
   CATEGORIAS_CONFIGURABLES,
   COLORES_GABINETE,
   CONFIGURATOR_TEXTS,
+  FAN_BLADE_ANGLES,
+  GRILLE_Y_POSITIONS,
   ICONOS_ACCESORIOS,
+  TOP_FAN_X_POSITIONS,
 } from "../../constants/CONFIGURATOR";
 
 // Dibuja un ventilador dentro del dibujo del gabinete.
@@ -16,7 +19,7 @@ const Ventilador = ({ palette, cx, cy, r, color = "#3b82f6" }) => {
     <g>
       <circle cx={cx} cy={cy} r={r} fill={palette.panel} stroke={color} strokeWidth="1.5" />
       <circle cx={cx} cy={cy} r={r * 0.25} fill={color} />
-      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+      {FAN_BLADE_ANGLES.map((deg) => {
         const rad = (deg * Math.PI) / 180;
         const x1 = cx + Math.cos(rad) * r * 0.28;
         const y1 = cy + Math.sin(rad) * r * 0.28;
@@ -143,7 +146,7 @@ const ConfiguratorPreview = ({ seleccion }) => {
         ) : (
           /* rejilla de ventilación */
           <>
-            {[80, 95, 110, 125, 140, 155, 170, 185, 200].map((y) => (
+            {GRILLE_Y_POSITIONS.map((y) => (
               <rect key={y} x="75" y={y} width="165" height="3" rx="1.5"
                 fill={c.detalle} opacity="0.6" />
             ))}
@@ -155,7 +158,7 @@ const ConfiguratorPreview = ({ seleccion }) => {
           <>
             <rect x="70" y="10" width="175" height="25" rx="4"
               fill={c.panel} stroke="#3b82f6" strokeWidth="1" strokeDasharray="4 2" />
-            {[110, 155, 200].slice(0, superior.length).map((x) => (
+            {TOP_FAN_X_POSITIONS.slice(0, superior.length).map((x) => (
               <g key={x}>
                 <circle cx={x} cy="22" r="9" fill="none" stroke="#3b82f6" strokeWidth="1" />
                 <circle cx={x} cy="22" r="3" fill="#3b82f6" />

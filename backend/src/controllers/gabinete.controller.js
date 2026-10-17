@@ -1,49 +1,17 @@
-const { repo } = require('../lib/data-source');
+// CONTROLLER
+// El controller recibe el pedido del usuario, se lo pasa al service y devuelve la respuesta (con su código: 200, 201, 204...).
+// Debe tener: funciones cortas que leen los datos que llegaron (body, params, usuario logueado), llaman a un service y responden.
+// No debe tener: reglas del negocio ni consultas a la base de datos.
+// Este archivo: recibe y responde los pedidos del catálogo público de gabinetes.
 
-// Obtener todos los gabinetes activos
-async function obtenerGabinetes(req, res) {
-    try {
-        const gabinetes = await repo('gabinete').find({
-            where: { activo: true }
-        });
+import * as gabineteService from '../services/gabinete.service.js';
 
-        // Convertir los campos Decimal a número para evitar problemas de serialización en JSON
-        const gabinetesMapeados = gabinetes.map(gab => ({
-            ...gab,
-            costoUnitario: Number(gab.costoUnitario)
-        }));
-
-        return res.status(200).json(gabinetesMapeados);
-    } catch (error) {
-        console.error("Error al obtener gabinetes:", error);
-        return res.status(500).json({ error: 'Error al obtener los gabinetes' });
-    }
-}
-
-// Obtener un gabinete específico por su ID
-async function obtenerGabinetePorId(req, res) {
-    try {
-        const { id } = req.params;
-        const gabinete = await repo('gabinete').findOneBy({ id });
-
-        if (!gabinete || !gabinete.activo) {
-            return res.status(404).json({ error: 'Gabinete no encontrado' });
-        }
-
-        // Convertir Decimal a número por seguridad
-        const gabineteMapeado = {
-            ...gabinete,
-            costoUnitario: Number(gabinete.costoUnitario)
-        };
-
-        return res.status(200).json(gabineteMapeado);
-    } catch (error) {
-        console.error("Error al obtener el gabinete:", error);
-        return res.status(500).json({ error: 'Error al obtener el gabinete' });
-    }
-}
-
-module.exports = {
-    obtenerGabinetes,
-    obtenerGabinetePorId
+const obtenerGabinetes = async (req, res) => {
+  res.json(await gabineteService.listarActivos());
 };
+
+const obtenerGabinetePorId = async (req, res) => {
+  res.json(await gabineteService.obtenerActivo(req.params.id));
+};
+
+export { obtenerGabinetes, obtenerGabinetePorId };

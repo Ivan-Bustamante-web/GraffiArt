@@ -1,3 +1,14 @@
+import { ROUTES } from "./ROUTES";
+
+export const AUTH_INITIAL_FORM = {
+  nombre: "",
+  apellido: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  telefono: "",
+};
+
 export const LOGIN = {
   title: "Iniciar sesión",
   subtitle: "Ingresá con tu cuenta para continuar.",
@@ -6,7 +17,6 @@ export const LOGIN = {
   hasntAccount: "¿No tenés una cuenta?",
   badge: {
     access: "Acceso Seguro",
-    recovery: "Recuperación",
   },
   register: {
     title: "Creá tu cuenta",
@@ -14,30 +24,6 @@ export const LOGIN = {
     tab: "Registrarme",
     submit: "Crear mi cuenta",
     success: "Registro exitoso. Ya podés iniciar sesión.",
-  },
-  forgot: {
-    title: "¿Olvidaste tu contraseña?",
-    subtitle:
-      "Ingresá tu correo electrónico para recibir las instrucciones de recuperación.",
-    submit: "Enviar enlace de recuperación",
-    success:
-      "Si el email está registrado, recibirás un correo con las instrucciones.",
-    emptyEmail: "Por favor ingresá tu email.",
-    result:
-      "Revisá tu casilla de correo. Si tenés el código de recuperación, podés ingresarlo directamente:",
-    recoveryLink: "Ingresar código de recuperación",
-    requestAnother: "Solicitar otro correo",
-  },
-  reset: {
-    title: "Nueva Contraseña",
-    subtitle: "Ingresá tu nueva clave (mínimo 8 caracteres).",
-    subtitleNoToken: "Ingresá tu código de recuperación y tu nueva clave.",
-    submit: "Guardar nueva contraseña",
-    success: "¡Contraseña actualizada con éxito! Ya podés iniciar sesión.",
-    codeLabel: "Código o Token de recuperación",
-    codePlaceholder: "Pegá el código recibido",
-    emptyCode: "Debes ingresar el código o token de recuperación.",
-    newPassword: "Nueva Contraseña",
   },
   form: {
     name: "Nombre",
@@ -47,7 +33,6 @@ export const LOGIN = {
     email: "Email",
     password: "Contraseña",
     confirmPassword: "Confirmar Contraseña",
-    forgotPassword: "¿Olvidaste tu contraseña?",
     showPassword: "Ver contraseña",
     hidePassword: "Ocultar contraseña",
     showConfirmPassword: "Ver confirmación de contraseña",
@@ -60,10 +45,6 @@ export const LOGIN = {
     passwordMinPlaceholder: "Mínimo 8 caracteres",
     confirmPasswordPlaceholder: "Repetí la contraseña",
     processing: "Procesando...",
-  },
-  footer: {
-    forgotLogin: "¿Recordaste tu contraseña?",
-    registerLogin: "¿Ya tenés una cuenta?",
   },
   ERRORS: {
     email: "Ingrese un correo electrónico válido",
@@ -79,24 +60,7 @@ export const LOGIN = {
   },
 };
 
-// export const LOGIN = {
-//   title: "Iniciar sesión",
-//   subtitle: "Ingresá con tu cuenta para continuar.",
-//   relogin: "Volver a Iniciar Sesión",
-//   hasAccount: "¿Ya tenés una cuenta?",
-//   hasntAccount: "¿No tenés una cuenta?",
-//   ERRORS: {
-//     email: "Ingrese un correo electrónico válido",
-//     password: "La contraseña debe tener al menos 6 caracteres",
-//   },
-//   REQUIRED: {
-//     email: "El correo electrónico es obligatorio",
-//     password: "La contraseña es obligatoria",
-//   },
-
-//   RESET: {
-//     title: "Restablecer contraseña",
-//     subtitle: "Ingresá tu nueva clave (mínimo 8 caracteres).",
-//     subtitleNoToken: "Ingresá tu código de recuperación y tu nueva clave.",
-//   },
-// };
+export const AUTH_TABS = [
+  { id: "login", to: ROUTES.login, label: LOGIN.title },
+  { id: "register", to: ROUTES.register, label: LOGIN.register.tab },
+];

@@ -3,30 +3,19 @@ import Button from "../../Button/Button";
 import TextField from "../../TextField/TextField";
 import { LOGIN } from "../../../constants/LOGIN";
 
-// Formulario de acceso. Cambia sus campos según el modo: iniciar sesión, registrarse, recuperar o restablecer contraseña.
+// Formulario de acceso. Cambia sus campos según el modo: iniciar sesión o registrarse.
 // Props:
-//   mode: qué formulario mostrar: login, register, forgot o reset
+//   mode: qué formulario mostrar: login o register
 //   form: valores que el usuario escribió
 //   onFieldChange: se ejecuta cada vez que el usuario escribe
 //   onSubmit: se ejecuta al enviar el formulario
 //   isLoading: true mientras se espera la respuesta del servidor
-//   hasResetToken: true si el código de recuperación ya vino en el link
-//   onForgotPassword: qué hacer al tocar "¿Olvidaste tu contraseña?"
-const AuthForm = ({mode, form, onFieldChange, onSubmit, isLoading, hasResetToken, onForgotPassword,
-}) => {
+const AuthForm = ({ mode, form, onFieldChange, onSubmit, isLoading }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const showPasswordField =
-    mode === "login" || mode === "register" || mode === "reset";
-  const showConfirmPasswordField = mode === "register" || mode === "reset";
-
-  const submitLabel = {
-    reset: LOGIN.reset.submit,
-    register: LOGIN.register.submit,
-    forgot: LOGIN.forgot.submit,
-    login: LOGIN.title,
-  }[mode];
+  const isLogin = mode === "login";
+  const submitLabel = isLogin ? LOGIN.title : LOGIN.register.submit;
 
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
@@ -77,81 +66,53 @@ const AuthForm = ({mode, form, onFieldChange, onSubmit, isLoading, hasResetToken
         />
       )}
 
-      {mode !== "reset" && (
-        <TextField
-          label={LOGIN.form.email}
-          id="auth-email"
-          type="email"
-          name="email"
-          value={form.email}
-          onChange={onFieldChange}
-          required
-          autoComplete="email"
-          placeholder={LOGIN.form.emailPlaceholder}
-        />
-      )}
+      <TextField
+        label={LOGIN.form.email}
+        id="auth-email"
+        type="email"
+        name="email"
+        value={form.email}
+        onChange={onFieldChange}
+        required
+        autoComplete="email"
+        placeholder={LOGIN.form.emailPlaceholder}
+      />
 
-      {mode === "reset" && !hasResetToken && (
-        <TextField
-          label={LOGIN.reset.codeLabel}
-          id="auth-reset-code"
-          type="text"
-          name="resetCode"
-          value={form.resetCode}
-          onChange={onFieldChange}
-          required
-          placeholder={LOGIN.reset.codePlaceholder}
-        />
-      )}
-
-      {showPasswordField && (
-        <TextField
-          label={mode === "reset" ? LOGIN.reset.newPassword : LOGIN.form.password}
-          id="auth-password"
-          labelAction={
-            mode === "login" && (
-              <Button
-                variant="text"
-                type="button"
-                onClick={onForgotPassword}
-              >
-                {LOGIN.form.forgotPassword}
-              </Button>
-            )
-          }
-          inputAction={
-            <Button
-              variant="passwordToggle"
-              type="button"
-              onClick={() => setShowPassword((visible) => !visible)}
-              aria-label={
-                showPassword
-                  ? LOGIN.form.hidePassword
-                  : LOGIN.form.showPassword
-              }
-              aria-pressed={showPassword}
-            >
-              {showPassword
+      <TextField
+        label={LOGIN.form.password}
+        id="auth-password"
+        inputAction={
+          <Button
+            variant="passwordToggle"
+            type="button"
+            onClick={() => setShowPassword((visible) => !visible)}
+            aria-label={
+              showPassword
                 ? LOGIN.form.hidePassword
-                : LOGIN.form.showPassword}
-            </Button>
-          }
-          type={showPassword ? "text" : "password"}
-          name="password"
-          value={form.password}
-          onChange={onFieldChange}
-          required
-          minLength={mode === "login" ? undefined : 8}
-          autoComplete={mode === "login" ? "current-password" : "new-password"}
-          placeholder={
-            mode === "login"
-              ? LOGIN.form.passwordPlaceholder
-              : LOGIN.form.passwordMinPlaceholder
-          }
-        />
-      )}
+                : LOGIN.form.showPassword
+            }
+            aria-pressed={showPassword}
+          >
+            {showPassword
+              ? LOGIN.form.hidePassword
+              : LOGIN.form.showPassword}
+          </Button>
+        }
+        type={showPassword ? "text" : "password"}
+        name="password"
+        value={form.password}
+        onChange={onFieldChange}
+        required
+        minLength={isLogin ? undefined : 8}
+        autoComplete={isLogin ? "current-password" : "new-password"}
+        placeholder={
+          isLogin
+            ? LOGIN.form.passwordPlaceholder
+            : LOGIN.form.passwordMinPlaceholder
+        }
+      />
 
-      {showConfirmPasswordField && (
+      {!isLogin && (
         <TextField
           label={LOGIN.form.confirmPassword}
           id="auth-confirm-password"

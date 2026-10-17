@@ -30,8 +30,6 @@ export const router = createBrowserRouter([
 
       { path: ROUTES.login, element: <Login /> },
       { path: ROUTES.register, element: <Register /> },
-      { path: ROUTES.forgotPassword, element: <Login /> },
-      { path: ROUTES.resetPassword, element: <Login /> },
 
       {
         element: <ProtectedRoute />,

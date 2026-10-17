@@ -1,131 +1,26 @@
-const { repo } = require('../lib/data-source');
+// CONTROLLER
+// El controller recibe el pedido del usuario, se lo pasa al service y devuelve la respuesta (con su código: 200, 201, 204...).
+// Debe tener: funciones cortas que leen los datos que llegaron (body, params, usuario logueado), llaman a un service y responden.
+// No debe tener: reglas del negocio ni consultas a la base de datos.
+// Este archivo: recibe y responde los pedidos de las categorías de productos.
 
-const esDuplicado = (error) => (error.code || error.driverError?.code) === 'ER_DUP_ENTRY';
+import * as categoriaService from '../services/categoria.service.js';
 
-async function conConteo(id) {
-  const categoria = await repo('CategoriaProducto').findOneBy({ id });
-  if (!categoria) return null;
-  const productos = await repo('gabinete').countBy({ categoriaId: id });
-  return { ...categoria, _count: { productos } };
-}
-
-async function listarCategorias(req, res) {
-  try {
-    const categorias = await repo('CategoriaProducto')
-      .createQueryBuilder('c')
-      .loadRelationCountAndMap('c.totalProductos', 'c.productos')
-      .orderBy('c.nombre', 'ASC')
-      .getMany();
-
-    res.json(
-      categorias.map(({ totalProductos, ...categoria }) => ({
-        ...categoria,
-        _count: { productos: totalProductos },
-      }))
-    );
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-}
-
-async function crearCategoria(req, res) {
-  try {
-    const { nombre, descripcion } = req.body || {};
-    const nombreLimpio = typeof nombre === 'string' ? nombre.trim() : '';
-
-    if (!nombreLimpio) {
-      return res.status(400).json({
-        error: 'El nombre de la categoría es obligatorio',
-      });
-    }
-
-    const categoria = await repo('CategoriaProducto').save(
-      repo('CategoriaProducto').create({
-        nombre: nombreLimpio,
-        descripcion:
-          typeof descripcion === 'string' && descripcion.trim()
-            ? descripcion.trim()
-            : null,
-      })
-    );
-
-    res.status(201).json(categoria);
-  } catch (error) {
-    if (esDuplicado(error)) {
-      return res.status(409).json({
-        error: 'Ya existe una categoría con ese nombre',
-      });
-    }
-
-    res.status(500).json({ error: error.message });
-  }
-}
-
-async function editarCategoria(req, res) {
-  try {
-    const { nombre, descripcion, activo } = req.body || {};
-    const data = {};
-
-    if (nombre !== undefined) {
-      const nombreLimpio = typeof nombre === 'string' ? nombre.trim() : '';
-      if (!nombreLimpio) {
-        return res.status(400).json({
-          error: 'El nombre de la categoría es obligatorio',
-        });
-      }
-      data.nombre = nombreLimpio;
-    }
-
-    if (descripcion !== undefined) {
-      data.descripcion =
-        typeof descripcion === 'string' && descripcion.trim()
-          ? descripcion.trim()
-          : null;
-    }
-
-    if (activo !== undefined) {
-      data.activo = Boolean(activo);
-    }
-
-    if (!(await repo('CategoriaProducto').existsBy({ id: req.params.id }))) {
-      return res.status(404).json({ error: 'Categoría no encontrada' });
-    }
-    if (Object.keys(data).length) {
-      await repo('CategoriaProducto').update({ id: req.params.id }, data);
-    }
-    const categoria = await conConteo(req.params.id);
-    if (!categoria) {
-      return res.status(404).json({ error: 'Categoría no encontrada' });
-    }
-
-    res.json(categoria);
-  } catch (error) {
-    if (esDuplicado(error)) {
-      return res.status(409).json({
-        error: 'Ya existe una categoría con ese nombre',
-      });
-    }
-
-    res.status(400).json({ error: error.message });
-  }
-}
-
-async function eliminarCategoria(req, res) {
-  try {
-    const { affected } = await repo('CategoriaProducto').delete({ id: req.params.id });
-    if (!affected) {
-      return res.status(404).json({ error: 'Categoría no encontrada' });
-    }
-
-    res.status(204).send();
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-}
-
-module.exports = {
-  listarCategorias,
-  crearCategoria,
-  editarCategoria,
-  eliminarCategoria,
+const listarCategorias = async (req, res) => {
+  res.json(await categoriaService.listar());
 };
+
+const crearCategoria = async (req, res) => {
+  res.status(201).json(await categoriaService.crear(req.body));
+};
+
+const editarCategoria = async (req, res) => {
+  res.json(await categoriaService.editar(req.params.id, req.body));
+};
+
+const eliminarCategoria = async (req, res) => {
+  await categoriaService.eliminar(req.params.id);
+  res.status(204).send();
+};
+
+export { listarCategorias, crearCategoria, editarCategoria, eliminarCategoria };

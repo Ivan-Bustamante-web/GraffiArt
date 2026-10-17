@@ -1,12 +1,22 @@
-const express = require('express');
-const router = express.Router();
-const { listarDisenos, crearDiseno, actualizarDiseno, eliminarDiseno } = require('../controllers/diseno.controller');
-const { verificarToken } = require('../middleware/auth.middleware');
+// RUTAS
+// Las rutas son el mapa de la API: dicen qué dirección (URL) y qué método (GET, POST, PUT, DELETE) corresponde a cada acción.
+// Debe tener: la dirección, el método, los filtros que se aplican antes (estar logueado, ser admin, validar los datos) y el controller que atiende el pedido.
+// No debe tener: lógica ni consultas a la base de datos.
+// Este archivo: define las direcciones de los diseños guardados de cada usuario.
 
-router.use(verificarToken);
-router.get('/', listarDisenos);
-router.post('/', crearDiseno);
-router.put('/:id', actualizarDiseno);
-router.delete('/:id', eliminarDiseno);
+import { Router } from 'express';
+import * as controller from '../controllers/diseno.controller.js';
+import { authenticate } from '../middlewares/authenticate.js';
+import validate from '../middlewares/validate.js';
+import { createDisenoSchema, updateDisenoSchema } from '../schemas/diseno.schema.js';
 
-module.exports = router;
+const router = Router();
+
+router.use(authenticate);
+
+router.get('/', controller.listarDisenos);
+router.post('/', validate(createDisenoSchema), controller.crearDiseno);
+router.put('/:id', validate(updateDisenoSchema), controller.actualizarDiseno);
+router.delete('/:id', controller.eliminarDiseno);
+
+export default router;

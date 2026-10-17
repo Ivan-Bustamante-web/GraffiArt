@@ -112,3 +112,7 @@ export const CONFIGURATOR_TEXTS = {
   mailBody: (resumen, precio) =>
     `Hola, quiero consultar por un gabinete personalizado. Configuración: ${resumen}. Precio estimado: ${precio}.`,
 };
+
+export const FAN_BLADE_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+export const GRILLE_Y_POSITIONS = [80, 95, 110, 125, 140, 155, 170, 185, 200];
+export const TOP_FAN_X_POSITIONS = [110, 155, 200];

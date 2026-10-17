@@ -1,64 +1,36 @@
-const { repo } = require('../lib/data-source');
+// CONTROLLER
+// El controller recibe el pedido del usuario, se lo pasa al service y devuelve la respuesta (con su código: 200, 201, 204...).
+// Debe tener: funciones cortas que leen los datos que llegaron (body, params, usuario logueado), llaman a un service y responden.
+// No debe tener: reglas del negocio ni consultas a la base de datos.
+// Este archivo: recibe y responde los pedidos de los materiales del inventario.
 
-// Crear un material
-async function crearMaterial(req, res) {
-  try {
-    const material = await repo('material').save(repo('material').create(req.body));
-    res.status(201).json(material);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-}
+import * as materialService from '../services/material.service.js';
 
-// Listar todos los materiales
-async function listarMateriales(req, res) {
-  try {
-    const materiales = await repo('material').find();
-    res.json(materiales);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-}
+const listarMateriales = async (req, res) => {
+  res.json(await materialService.listar());
+};
 
-// Ver un material por id
-async function obtenerMaterial(req, res) {
-  try {
-    const material = await repo('material').findOneBy({ id: req.params.id });
-    if (!material) return res.status(404).json({ error: 'Material no encontrado' });
-    res.json(material);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-}
+const obtenerMaterial = async (req, res) => {
+  res.json(await materialService.obtener(req.params.id));
+};
 
-// Editar un material
-async function editarMaterial(req, res) {
-  try {
-    if (!(await repo('material').existsBy({ id: req.params.id }))) {
-      return res.status(404).json({ error: 'Material no encontrado' });
-    }
-    await repo('material').update({ id: req.params.id }, req.body);
-    res.json(await repo('material').findOneBy({ id: req.params.id }));
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-}
+const crearMaterial = async (req, res) => {
+  res.status(201).json(await materialService.crear(req.body));
+};
 
-// Eliminar un material
-async function eliminarMaterial(req, res) {
-  try {
-    const { affected } = await repo('material').delete({ id: req.params.id });
-    if (!affected) return res.status(404).json({ error: 'Material no encontrado' });
-    res.status(204).send();
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-}
+const editarMaterial = async (req, res) => {
+  res.json(await materialService.editar(req.params.id, req.body));
+};
 
-module.exports = {
-  crearMaterial,
+const eliminarMaterial = async (req, res) => {
+  await materialService.eliminar(req.params.id);
+  res.status(204).send();
+};
+
+export {
   listarMateriales,
   obtenerMaterial,
+  crearMaterial,
   editarMaterial,
   eliminarMaterial,
 };

@@ -7,8 +7,6 @@ export const ROUTES = {
   cart: "/carrito",
   login: "/login",
   register: "/register",
-  forgotPassword: "/forgot-password",
-  resetPassword: "/restablecer-password",
   profile: "/perfil",
   admin: "/admin",
   adminCategories: "/admin/categorias",

@@ -11,3 +11,5 @@ export const STORAGE_KEYS = {
   token: "graffiart_token",
   user: "graffiart_usuario",
 };
+
+export const UNAUTHORIZED_STATUSES = [401, 403];

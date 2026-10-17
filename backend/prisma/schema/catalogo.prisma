@@ -1,0 +1,61 @@
+// MODELO DE DATOS
+// Los archivos .prisma describen las tablas de la base de datos: sus campos, tipos y relaciones.
+// Está dividido por tema para que sea fácil de encontrar y mantener.
+// Este archivo: Tablas del catálogo: categorías de productos y gabinetes, con sus características (tamaño, formato, panel, etc.).
+
+enum TamanoGabinete {
+  FULL_TOWER
+  MID_TOWER
+  MINI_TOWER
+}
+
+enum FormatoGabinete {
+  ATX
+  MICRO_ATX
+  ITX
+}
+
+enum MaterialChasis {
+  ACERO
+  ALUMINIO
+}
+
+enum TipoPanel {
+  VIDRIO_TEMPLADO
+  ACRILICO
+  MALLADO
+}
+
+model CategoriaProducto {
+  id          String   @id @default(uuid())
+  nombre      String   @unique @db.VarChar(100)
+  descripcion String?  @db.Text
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  productos Gabinete[]
+}
+
+model Gabinete {
+  id             String          @id @default(uuid())
+  nombre         String          @db.VarChar(150)
+  marca          String          @db.VarChar(150)
+  costoUnitario  Decimal         @db.Decimal(10, 2)
+  stockActual    Int             @default(0)
+  stockMinimo    Int             @default(0)
+  tamano         TamanoGabinete
+  formato        FormatoGabinete
+  materialChasis MaterialChasis
+  panel          TipoPanel
+  activo         Boolean         @default(true)
+  categoriaId    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  categoria   CategoriaProducto?     @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  items       ItemCarrito[]
+  movimientos MovimientoInventario[]
+
+  @@index([categoriaId])
+}

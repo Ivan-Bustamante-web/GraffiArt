@@ -9,11 +9,12 @@ import useCrudResource from "../../hooks/useCrudResource";
 import { materialSchema } from "../../schemas/entities";
 import materialService from "../../services/materialService";
 import { getErrorMessage } from "../../utils/errors";
+import { UNAUTHORIZED_STATUSES } from "../../constants/APP";
 
 const M = MESSAGES.admin.materiales;
 
 const mapError = (error, fallback) =>
-  [401, 403].includes(error.response?.status)
+  UNAUTHORIZED_STATUSES.includes(error.response?.status)
     ? M.authError
     : getErrorMessage(error, fallback);
 

@@ -1,9 +1,4 @@
-const WIDTHS = {
-  sm: "max-w-md",
-  md: "max-w-3xl",
-  lg: "max-w-5xl",
-  xl: "max-w-6xl",
-};
+import { CONTAINER_WIDTHS } from "../../constants/STYLES";
 
 // Contenedor principal de cada página: pone el fondo, centra el contenido y muestra el título.
 // Props:
@@ -27,7 +22,7 @@ const MainContainer = ({
         centered ? "flex items-center justify-center" : ""
       }`}
     >
-      <div className={`mx-auto w-full space-y-6 ${WIDTHS[width]}`}>
+      <div className={`mx-auto w-full space-y-6 ${CONTAINER_WIDTHS[width]}`}>
         {(title || actions) && (
           <div className="flex items-start justify-between gap-4">
             <header>

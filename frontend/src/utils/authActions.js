@@ -10,28 +10,7 @@ const validatePassword = (form) => {
   return "";
 };
 
-export const submitAuthAction = async ({ mode, form, token, service }) => {
-  if (mode === "reset") {
-    const validationError = validatePassword(form);
-    if (validationError) return { error: validationError };
-
-    const activeToken = (token || form.resetCode).trim().toLowerCase();
-    if (!activeToken) {
-      return { error: LOGIN.reset.emptyCode };
-    }
-
-    const response = await service.resetPassword({
-      token: activeToken,
-      password: form.password,
-    });
-    return {
-      message:
-        response.message ||
-        LOGIN.reset.success,
-      actionComplete: true,
-    };
-  }
-
+export const submitAuthAction = async ({ mode, form, service }) => {
   if (mode === "register") {
     const validationError = validatePassword(form);
     if (validationError) return { error: validationError };
@@ -44,22 +23,7 @@ export const submitAuthAction = async ({ mode, form, token, service }) => {
       telefono: form.telefono,
     });
     return {
-      message:
-        response.message ||
-        LOGIN.register.success,
-      actionComplete: true,
-    };
-  }
-
-  if (mode === "forgot") {
-    const email = form.email.trim();
-    if (!email) return { error: LOGIN.forgot.emptyEmail };
-
-    const response = await service.requestPasswordReset(email);
-    return {
-      message:
-        response.message ||
-        LOGIN.forgot.success,
+      message: response.message || LOGIN.register.success,
       actionComplete: true,
     };
   }

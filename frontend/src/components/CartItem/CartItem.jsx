@@ -3,9 +3,7 @@ import { Link } from "react-router";
 import { formatPrice } from "../../utils/format";
 import { MESSAGES } from "../../constants/MESSAGES";
 import { ROUTES } from "../../constants/ROUTES";
-
-const QUANTITY_BUTTON_CLASS =
-  "cursor-pointer px-2 font-bold text-neutral-600 hover:text-neutral-900";
+import { QUANTITY_BUTTON_CLASS } from "../../constants/STYLES";
 
 // Un producto dentro del carrito, con su precio, cantidad y botón para quitarlo.
 // Props:
