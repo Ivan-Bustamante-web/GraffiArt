@@ -1,65 +1,36 @@
-const prisma = require('../lib/prisma');
+// CONTROLLER
+// El controller recibe el pedido del usuario, se lo pasa al service y devuelve la respuesta (con su código: 200, 201, 204...).
+// Debe tener: funciones cortas que leen los datos que llegaron (body, params, usuario logueado), llaman a un service y responden.
+// No debe tener: reglas del negocio ni consultas a la base de datos.
+// Este archivo: recibe y responde los pedidos de los materiales del inventario.
 
-// Crear un material
-async function crearMaterial(req, res) {
-  try {
-    const material = await prisma.material.create({ data: req.body });
-    res.status(201).json(material);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-}
+import * as materialService from '../services/material.service.js';
 
-// Listar todos los materiales
-async function listarMateriales(req, res) {
-  try {
-    const materiales = await prisma.material.findMany();
-    res.json(materiales);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-}
+const listarMateriales = async (req, res) => {
+  res.json(await materialService.listar());
+};
 
-// Ver un material por id
-async function obtenerMaterial(req, res) {
-  try {
-    const material = await prisma.material.findUnique({
-      where: { id: req.params.id },
-    });
-    if (!material) return res.status(404).json({ error: 'Material no encontrado' });
-    res.json(material);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-}
+const obtenerMaterial = async (req, res) => {
+  res.json(await materialService.obtener(req.params.id));
+};
 
-// Editar un material
-async function editarMaterial(req, res) {
-  try {
-    const material = await prisma.material.update({
-      where: { id: req.params.id },
-      data: req.body,
-    });
-    res.json(material);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-}
+const crearMaterial = async (req, res) => {
+  res.status(201).json(await materialService.crear(req.body));
+};
 
-// Eliminar un material
-async function eliminarMaterial(req, res) {
-  try {
-    await prisma.material.delete({ where: { id: req.params.id } });
-    res.status(204).send();
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-}
+const editarMaterial = async (req, res) => {
+  res.json(await materialService.editar(req.params.id, req.body));
+};
 
-module.exports = {
-  crearMaterial,
+const eliminarMaterial = async (req, res) => {
+  await materialService.eliminar(req.params.id);
+  res.status(204).send();
+};
+
+export {
   listarMateriales,
   obtenerMaterial,
+  crearMaterial,
   editarMaterial,
   eliminarMaterial,
 };

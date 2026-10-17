@@ -1,13 +1,12 @@
-require('dotenv').config();
-const { PrismaClient } = require('@prisma/client');
-const { PrismaMariaDb } = require('@prisma/adapter-mariadb');
+// CONEXIÓN EXTERNA
+// Guarda la conexión a una herramienta externa (acá, la base de datos) que se crea una sola vez y se reutiliza en todo el proyecto.
+// Este archivo: crea el cliente de Prisma conectado a MySQL.
 
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL must be set to initialize Prisma.');
-}
+import { PrismaClient } from '@prisma/client';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
+import env from '../config/env.js';
 
-const adapter = new PrismaMariaDb(databaseUrl);
+const adapter = new PrismaMariaDb(env.DATABASE_URL);
 const prisma = new PrismaClient({ adapter });
 
-module.exports = prisma;
+export default prisma;

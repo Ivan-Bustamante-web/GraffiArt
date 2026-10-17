@@ -1,0 +1,68 @@
+// MODELO DE DATOS
+// Los archivos .prisma describen las tablas de la base de datos: sus campos, tipos y relaciones.
+// Está dividido por tema para que sea fácil de encontrar y mantener.
+// Este archivo: Tablas del inventario: materiales y movimientos de stock.
+
+enum CategoriaMaterial {
+  MDF
+  MELAMINA
+  METAL
+  VIDRIO
+  ACERO
+  ACCESORIO
+  OTRO
+}
+
+enum UnidadMedida {
+  UNIDAD
+  KG
+  M
+  M2
+  CM
+  LATA
+  BOLSA
+}
+
+enum TipoMovimiento {
+  ENTRADA
+  SALIDA
+  AJUSTE
+}
+
+model Material {
+  id            String            @id @default(uuid())
+  nombre        String            @db.VarChar(150)
+  codigo        String            @unique @db.VarChar(50)
+  categoria     CategoriaMaterial
+  unidadMedida  UnidadMedida
+  stockActual   Int               @default(0)
+  stockMinimo   Int               @default(0)
+  costoUnitario Decimal?          @db.Decimal(10, 2)
+  descripcion   String?           @db.Text
+  activo        Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  movimientos MovimientoInventario[]
+}
+
+model MovimientoInventario {
+  id         String         @id @default(uuid())
+  tipo       TipoMovimiento
+  cantidad   Int
+  motivo     String?
+  referencia String?
+  fecha      DateTime       @default(now())
+  createdAt  DateTime       @default(now())
+  materialId String?
+  gabineteId String?
+  usuarioId  String?
+
+  material Material? @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  gabinete Gabinete? @relation(fields: [gabineteId], references: [id])
+  usuario  Usuario?  @relation(fields: [usuarioId], references: [id])
+
+  @@index([materialId])
+  @@index([gabineteId])
+  @@index([usuarioId])
+}
