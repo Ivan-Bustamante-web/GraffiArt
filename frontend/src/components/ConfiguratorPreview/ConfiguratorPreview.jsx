@@ -139,9 +139,9 @@ const ConfiguratorPreview = ({ seleccion }) => {
         {/* ── ventiladores frontales ── */}
         {frontal.length > 0 ? (
           <>
-            <Ventilador palette={c} cx="155" cy="120" r="38" color="#3b82f6" />
-            {frontal.length > 1 && <Ventilador palette={c} cx="155" cy="210" r="38" color="#3b82f6" />}
-            {frontal.length > 2 && <Ventilador palette={c} cx="155" cy="300" r="38" color="#3b82f6" />}
+            <Ventilador palette={c} cx={155} cy={120} r={38} color="#3b82f6" />
+            {frontal.length > 1 && <Ventilador palette={c} cx={155} cy={210} r={38} color="#3b82f6" />}
+            {frontal.length > 2 && <Ventilador palette={c} cx={155} cy={300} r={38} color="#3b82f6" />}
           </>
         ) : (
           /* rejilla de ventilación */
